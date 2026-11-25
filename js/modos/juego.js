@@ -2,7 +2,7 @@
  * JUEGO: une todas las piezas y gestiona los tres modos (coche, a pie, vuelo libre),
  * el teletransporte y el bucle principal.
  */
-import { CAMARA, CALIDADES, CLAVE_CALIDAD, CLAVE_MODO, MODELOS } from "../config.js";
+import { CAMARA, CALIDADES, CLAVE_CALIDAD, CLAVE_MODO, DISTANCIA_VISION, MODELOS } from "../config.js";
 import { aplicarCalidad } from "../mundo/mundo.js";
 import { FisicaSuelo } from "../mundo/fisica.js";
 import { desplazar, grados, radianes } from "../mundo/geo.js";
@@ -30,6 +30,7 @@ export class Juego {
     this.ocupado = false;
     this.ultimoTick = performance.now();
     this.ultimoAvisoChoque = 0;
+    this.farOriginal = this.viewer.camera.frustum.far;
 
     this.hud = new Hud({
       alCambiarModo: (m) => this.cambiarModo(m),
@@ -112,6 +113,8 @@ export class Juego {
   activarModo(modo) {
     this.modo = modo;
     this.hud.ponerModo(modo);
+    // En coche / a pie solo cargamos lo cercano; en vuelo, todo hasta el horizonte.
+    this.viewer.camera.frustum.far = DISTANCIA_VISION[modo] ?? this.farOriginal;
     if (modo === "vuelo") {
       this.camara.activar(false);
       return;
@@ -180,6 +183,7 @@ export class Juego {
     this.ocupado = true;
     this.pausado = true;
     this.camara.activar(false);
+    this.viewer.camera.frustum.far = this.farOriginal;
 
     const lon = radianes(lonG), lat = radianes(latG), rumbo = radianes(rumboG);
     try {

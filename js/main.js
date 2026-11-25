@@ -26,7 +26,7 @@ async function jugar(token) {
   carga(true, "Conectando con Cesium ion…");
   try {
     mundo = await crearMundo(document.getElementById("mundo"), token, calidadGuardada());
-    carga(true, "Cargando Valencia…");
+    carga(true, "Cargando el coche y el personaje (≈10 MB, solo la primera vez)…");
     juego = new Juego(mundo, entrada, { alSalir: salir });
     await juego.iniciar();
   } catch (e) {

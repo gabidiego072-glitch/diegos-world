@@ -17,8 +17,8 @@ export const CLAVE_MODO = "diegosworld.ultimoModoTerrestre";
  * - escalaResolucion: resolutionScale (1 = resolución normal, 0.6 = 60 % de píxeles).
  */
 export const CALIDADES = {
-  baja: { nombre: "Baja", errorPantalla: 32, escalaResolucion: 0.65, msaa: 1, fxaa: false, cacheMB: 256 },
-  alta: { nombre: "Alta", errorPantalla: 6, escalaResolucion: 1.0, msaa: 4, fxaa: true, cacheMB: 768 },
+  baja: { nombre: "Baja", errorPantalla: 24, escalaResolucion: 0.65, msaa: 1, fxaa: false, cacheMB: 256 },
+  alta: { nombre: "Alta", errorPantalla: 12, escalaResolucion: 1.0, msaa: 4, fxaa: true, cacheMB: 768 },
 };
 export const CALIDAD_POR_DEFECTO = "baja"; // pensado para PCs flojos
 
@@ -52,6 +52,12 @@ export const PEATON = {
   radioFrontal: 0.45,
   escalonMax: 0.45,
 };
+
+/**
+ * Distancia máxima de visión (metros) en coche y a pie. A ras de suelo la cámara ve hasta el horizonte
+ * y el navegador intentaría descargar media Valencia: limitarlo hace que la calle cercana cargue rápido y nítida.
+ */
+export const DISTANCIA_VISION = { coche: 1500, pie: 800 };
 
 /** Cámara en tercera persona. */
 export const CAMARA = {

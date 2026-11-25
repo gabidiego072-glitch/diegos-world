@@ -1,0 +1,48 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/Cesium.js"></script>
+<link href="../css/estilo.css" rel="stylesheet"></head><body>
+<!-- Escenario de prueba SIN Google: suelo gris, pared roja (40 m al norte), bordillo amarillo de 0,2 m (15 m al este),
+     escalón azul de 1 m (15 m al oeste) y toldo verde a 3 m (15 m al sur). Sirve para probar la física de rayos.
+     Ábrelo con un servidor local:  python3 -m http.server  y luego  http://localhost:8000/pruebas/fisica.html -->
+<div id="mundo"></div>
+<div id="pantalla-carga" hidden><p id="texto-carga"></p></div>
+<div id="hud" hidden><div class="hud-arriba"><nav class="modos">
+<button class="modo" data-modo="coche">c</button><button class="modo" data-modo="pie">p</button><button class="modo" data-modo="vuelo">v</button></nav>
+<div class="acciones"><button id="boton-lugares"></button><button id="boton-calidad"><b id="texto-calidad"></b></button><button id="boton-salir"></button></div></div>
+<aside id="panel-lugares" class="panel" hidden><ul id="lista-lugares"></ul></aside>
+<div id="velocimetro" class="velocimetro" hidden><div class="vel-numero" id="vel-numero">0</div><div class="vel-unidad">km/h</div><div class="vel-barra"><div id="vel-relleno"></div></div><div class="vel-turbo" id="vel-turbo">TURBO</div></div>
+<div id="estado-pie" class="velocimetro pequeno" hidden><div class="vel-numero" id="pie-estado"></div></div>
+<button id="boton-aparecer" hidden></button><div id="ayuda" class="ayuda"></div><div id="aviso" class="aviso"></div></div>
+<script type="module">
+import { Juego } from "../js/modos/juego.js";
+import { Entrada } from "../js/jugador/entrada.js";
+import { desplazar } from "../js/mundo/geo.js";
+const viewer = new Cesium.Viewer("mundo", {globe:false, baseLayer:false, baseLayerPicker:false, geocoder:false, homeButton:false, sceneModePicker:false, navigationHelpButton:false, animation:false, timeline:false, fullscreenButton:false, infoBox:false, selectionIndicator:false, skyAtmosphere:new Cesium.SkyAtmosphere()});
+viewer.clock.currentTime = Cesium.JulianDate.fromIso8601("2026-06-21T10:30:00Z");
+const lon0 = Cesium.Math.toRadians(-0.37598), lat0 = Cesium.Math.toRadians(39.46728);
+function caja(dE, dN, cx, cy, cz, color) { // centro desplazado dE,dN metros; tamaño; z base 60
+  const p = desplazar(lon0, lat0, dE, dN);
+  const centro = Cesium.Cartesian3.fromRadians(p.lon, p.lat, 60 + cz/2 + (cz<0? 0:0));
+  const m = Cesium.Transforms.eastNorthUpToFixedFrame(centro);
+  viewer.scene.primitives.add(new Cesium.Primitive({ asynchronous:false,
+    geometryInstances: new Cesium.GeometryInstance({ geometry: Cesium.BoxGeometry.fromDimensions({vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT, dimensions: new Cesium.Cartesian3(cx,cy,Math.abs(cz))}), modelMatrix: m, attributes:{color: Cesium.ColorGeometryInstanceAttribute.fromColor(color)} }),
+    appearance: new Cesium.PerInstanceColorAppearance({ flat:false }) }));
+}
+// suelo: losa de 400x400 con la cara superior a 60 m
+caja(0,0,400,400,-2, Cesium.Color.DARKGRAY.withAlpha(1)); // centro a 59
+// pared a 40 m al norte
+caja(0,40,30,2,8, Cesium.Color.RED);
+// bordillo de 0.2 m a 15 m al este y escalón de 1 m a 15 m al oeste
+caja(15,0,2,20,0.2*2, Cesium.Color.YELLOW); // ocupa 59.8..60.2 -> encima 60.2
+caja(-15,0,2,20,2, Cesium.Color.BLUE);       // ocupa 59..61 -> escalón 1 m
+// toldo a 3 m de altura a 15 m al sur (no debe subirse)
+{ const p = desplazar(lon0, lat0, 0, -15); const c = Cesium.Cartesian3.fromRadians(p.lon,p.lat,63.1);
+  viewer.scene.primitives.add(new Cesium.Primitive({asynchronous:false, geometryInstances: new Cesium.GeometryInstance({geometry: Cesium.BoxGeometry.fromDimensions({vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT, dimensions:new Cesium.Cartesian3(10,4,0.2)}), modelMatrix: Cesium.Transforms.eastNorthUpToFixedFrame(c), attributes:{color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.GREEN)}}), appearance:new Cesium.PerInstanceColorAppearance()})); }
+const mundo = { viewer, scene: viewer.scene, tileset: {}, nivelCalidad: "baja" };
+const entrada = new Entrada();
+const juego = new Juego(mundo, entrada, { alSalir(){} });
+window.juego = juego; window.entrada = entrada;
+// colocar el lugar inicial en nuestro punto de prueba
+juego.iniciar().then(() => { window.listo = true; }).catch(e => { window.fallo = String(e); console.error(e); });
+</script></body></html>

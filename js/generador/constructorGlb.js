@@ -156,6 +156,72 @@ export class ConstructorGlb {
     }
   }
 
+  /**
+   * Prisma: un perfil 2D (lista de [u, z] en sentido antihorario visto desde +v) extruido a lo ancho.
+   * Se coloca con centro (x, y, z), eje u a lo largo de `angulo` y eje v a su izquierda.
+   * `colorTramo(i)` permite pintar cada tramo del contorno (p. ej. cristales) con otra clave/color.
+   */
+  prisma(clave, perfil, ancho, x, y, z, angulo, color = BLANCO, colorTramo = null) {
+    const c = Math.cos(angulo), s = Math.sin(angulo);
+    const P = (u, v, w) => [x + u * c - v * s, y + u * s + v * c, z + w];
+    const hv = ancho / 2;
+    // Caras laterales (perfil triangulado).
+    let indices;
+    try {
+      indices = Cesium.PolygonPipeline.triangulate(perfil.map((p) => new Cesium.Cartesian2(p[0], p[1])));
+    } catch { return; }
+    for (const lado of [1, -1]) {
+      const g = this.grupo(clave);
+      const base = g.pos.length / 3;
+      const n = [-s * lado, c * lado, 0];
+      for (const [u, w] of perfil) {
+        const p = P(u, hv * lado, w);
+        this.vertice(g, p[0], p[1], p[2], n[0], n[1], n[2], u * 0.2, w * 0.2, color);
+      }
+      for (let i = 0; i < indices.length; i += 3) {
+        if (lado > 0) g.idx.push(base + indices[i], base + indices[i + 2], base + indices[i + 1]);
+        else g.idx.push(base + indices[i], base + indices[i + 1], base + indices[i + 2]);
+      }
+    }
+    // Contorno (techo, capó, parabrisas…).
+    for (let i = 0; i < perfil.length; i++) {
+      const [u0, w0] = perfil[i], [u1, w1] = perfil[(i + 1) % perfil.length];
+      const du = u1 - u0, dw = w1 - w0, L = Math.hypot(du, dw) || 1;
+      // normal hacia fuera del perfil antihorario: (dw, -du)
+      const nu = dw / L, nw = -du / L;
+      const n = [nu * c, nu * s, nw];
+      const t = colorTramo ? colorTramo(i) : null;
+      this.quad(t ? t.clave : clave,
+        P(u0, hv, w0), P(u1, hv, w1), P(u1, -hv, w1), P(u0, -hv, w0), n,
+        [0, 1, 1, 1, 1, 0, 0, 0], t ? t.color : color);
+    }
+  }
+
+  /** Rueda: cilindro horizontal con el eje perpendicular a `angulo`. */
+  rueda(clave, x, y, z, radio, ancho, angulo, color = BLANCO, lados = 10) {
+    const c = Math.cos(angulo), s = Math.sin(angulo);
+    const ax = -s, ay = c; // eje
+    const g = this.grupo(clave);
+    for (let i = 0; i < lados; i++) {
+      const a0 = (i / lados) * Math.PI * 2, a1 = ((i + 1) / lados) * Math.PI * 2;
+      const r0 = [Math.cos(a0) * c, Math.cos(a0) * s, Math.sin(a0)], r1 = [Math.cos(a1) * c, Math.cos(a1) * s, Math.sin(a1)];
+      const p = (r, k) => [x + r[0] * radio + ax * ancho * k, y + r[1] * radio + ay * ancho * k, z + r[2] * radio];
+      const a = p(r0, -0.5), b = p(r1, -0.5), d = p(r1, 0.5), e = p(r0, 0.5);
+      const v0 = this.vertice(g, a[0], a[1], a[2], r0[0], r0[1], r0[2], 0, 0, color);
+      const v1 = this.vertice(g, b[0], b[1], b[2], r1[0], r1[1], r1[2], 1, 0, color);
+      const v2 = this.vertice(g, d[0], d[1], d[2], r1[0], r1[1], r1[2], 1, 1, color);
+      const v3 = this.vertice(g, e[0], e[1], e[2], r0[0], r0[1], r0[2], 0, 1, color);
+      g.idx.push(v0, v2, v1, v0, v3, v2);
+      for (const k of [-0.5, 0.5]) {
+        const cc = this.vertice(g, x + ax * ancho * k, y + ay * ancho * k, z, ax * Math.sign(k), ay * Math.sign(k), 0, 0.5, 0.5, color);
+        const q0 = p(r0, k), q1 = p(r1, k);
+        const i0 = this.vertice(g, q0[0], q0[1], q0[2], ax * Math.sign(k), ay * Math.sign(k), 0, 0, 0, color);
+        const i1 = this.vertice(g, q1[0], q1[1], q1[2], ax * Math.sign(k), ay * Math.sign(k), 0, 1, 0, color);
+        if (k > 0) g.idx.push(cc, i0, i1); else g.idx.push(cc, i1, i0);
+      }
+    }
+  }
+
   get vacio() {
     for (const g of this.grupos.values()) if (g.idx.length) return false;
     return true;

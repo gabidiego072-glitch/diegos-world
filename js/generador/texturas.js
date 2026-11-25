@@ -35,20 +35,73 @@ async function aBytes(canvas, mime = "image/jpeg") {
 }
 
 function texturaAsfalto() {
-  const [c, x] = lienzo(512);
-  x.fillStyle = "#3b3d40";
-  x.fillRect(0, 0, 512, 512);
-  ruido(x, 512, 512, 26000, 70, 60, 0.35, 1, 2);
-  ruido(x, 512, 512, 3000, 120, 40, 0.25, 2, 1.5);
-  // manchas y parches
+  const [c, x] = lienzo(1024);
+  x.fillStyle = "#38393b";
+  x.fillRect(0, 0, 1024, 1024);
+  ruido(x, 1024, 1024, 90000, 68, 60, 0.35, 1, 2);
+  ruido(x, 1024, 1024, 12000, 125, 40, 0.22, 2, 1.5);
   const r = aleatorio(3);
-  for (let i = 0; i < 14; i++) {
-    x.fillStyle = `rgba(20,20,22,${0.08 + r() * 0.1})`;
-    x.beginPath();
-    x.ellipse(r() * 512, r() * 512, 20 + r() * 60, 10 + r() * 40, r() * 3, 0, Math.PI * 2);
-    x.fill();
+  // parches de asfalto nuevo (más oscuros) y viejo (más claros)
+  for (let i = 0; i < 7; i++) {
+    const v = r() < 0.5 ? 38 : 78;
+    x.fillStyle = `rgba(${v},${v},${v + 2},0.55)`;
+    x.fillRect(r() * 1024, r() * 1024, 80 + r() * 260, 50 + r() * 160);
   }
+  ruido(x, 1024, 1024, 30000, 70, 50, 0.25, 4, 2);
+  // manchas de aceite
+  for (let i = 0; i < 22; i++) {
+    const g = x.createRadialGradient(0, 0, 0, 0, 0, 1);
+    g.addColorStop(0, "rgba(10,10,12,0.35)");
+    g.addColorStop(1, "rgba(10,10,12,0)");
+    x.save();
+    x.translate(r() * 1024, r() * 1024);
+    x.scale(20 + r() * 50, 10 + r() * 30);
+    x.fillStyle = g;
+    x.beginPath(); x.arc(0, 0, 1, 0, Math.PI * 2); x.fill();
+    x.restore();
+  }
+  // grietas
+  x.strokeStyle = "rgba(15,15,16,0.55)";
+  for (let i = 0; i < 18; i++) {
+    x.lineWidth = 1 + r() * 1.5;
+    x.beginPath();
+    let px = r() * 1024, py = r() * 1024;
+    x.moveTo(px, py);
+    for (let k = 0; k < 8; k++) { px += (r() - 0.5) * 70; py += (r() - 0.5) * 70; x.lineTo(px, py); }
+    x.stroke();
+  }
+  // juntas de alquitrán
+  x.strokeStyle = "rgba(12,12,12,0.5)";
+  x.lineWidth = 3;
+  for (let i = 0; i < 4; i++) { x.beginPath(); const y0 = r() * 1024; x.moveTo(0, y0); x.bezierCurveTo(300, y0 + 40, 700, y0 - 40, 1024, y0 + (r() - 0.5) * 60); x.stroke(); }
   return c;
+}
+
+/** Manchas de suciedad (para aceras y fachadas). */
+function suciedad(x, w, h, semilla, n, alfa) {
+  const r = aleatorio(semilla);
+  for (let i = 0; i < n; i++) {
+    const g = x.createRadialGradient(0, 0, 0, 0, 0, 1);
+    g.addColorStop(0, `rgba(40,34,26,${alfa})`);
+    g.addColorStop(1, "rgba(40,34,26,0)");
+    x.save();
+    x.translate(r() * w, r() * h);
+    x.scale(15 + r() * 60, 15 + r() * 50);
+    x.fillStyle = g;
+    x.beginPath(); x.arc(0, 0, 1, 0, Math.PI * 2); x.fill();
+    x.restore();
+  }
+}
+
+/** Churretes de suciedad que bajan desde ventanas y cornisas. */
+function churretes(x, xs, y0, largo, ancho, alfa) {
+  for (const px of xs) {
+    const g = x.createLinearGradient(0, y0, 0, y0 + largo);
+    g.addColorStop(0, `rgba(55,48,38,${alfa})`);
+    g.addColorStop(1, "rgba(55,48,38,0)");
+    x.fillStyle = g;
+    x.fillRect(px - ancho / 2, y0, ancho, largo);
+  }
 }
 
 function texturaAcera() {
@@ -72,6 +125,11 @@ function texturaAcera() {
     }
   }
   ruido(x, 512, 512, 9000, 120, 80, 0.12, 8, 2);
+  suciedad(x, 512, 512, 9, 10, 0.16);
+  // chicles
+  const rr = aleatorio(10);
+  x.fillStyle = "rgba(60,60,60,0.35)";
+  for (let i = 0; i < 25; i++) { x.beginPath(); x.arc(rr() * 512, rr() * 512, 2 + rr() * 2, 0, Math.PI * 2); x.fill(); }
   return c;
 }
 
@@ -143,6 +201,46 @@ function texturaPared() {
   // cornisa
   x.fillStyle = "rgba(0,0,0,0.12)";
   x.fillRect(0, 0, 512, 18);
+  churretes(x, [290, 450], 320, 70, 18, 0.18);
+  suciedad(x, 512, 448, 33, 8, 0.12);
+  // suciedad de la parte baja
+  const g = x.createLinearGradient(0, 300, 0, 384);
+  g.addColorStop(0, "rgba(50,42,32,0)"); g.addColorStop(1, "rgba(50,42,32,0.25)");
+  x.fillStyle = g; x.fillRect(0, 300, 512, 84);
+  return c;
+}
+
+/** Local cerrado: persiana metálica con grafitis (muy de ciudad de videojuego). Cubre 4 m × 3,5 m. */
+function texturaPersiana() {
+  const [c, x] = lienzo(512, 448);
+  x.fillStyle = "#d9d4ca";
+  x.fillRect(0, 0, 512, 448);
+  ruido(x, 512, 448, 6000, 200, 60, 0.12, 51, 2);
+  x.fillStyle = "#8d9196";
+  x.fillRect(20, 70, 472, 340);
+  for (let y = 70; y < 410; y += 10) {
+    x.fillStyle = "rgba(255,255,255,0.18)"; x.fillRect(20, y, 472, 3);
+    x.fillStyle = "rgba(0,0,0,0.18)"; x.fillRect(20, y + 7, 472, 2);
+  }
+  const r = aleatorio(52);
+  const colores = ["#e0322f", "#2f7de0", "#f2c029", "#22b35a", "#ffffff", "#c43be0", "#111111"];
+  x.lineCap = "round";
+  for (let i = 0; i < 4; i++) {
+    x.strokeStyle = colores[Math.floor(r() * colores.length)];
+    x.lineWidth = 8 + r() * 10;
+    x.beginPath();
+    let px = 40 + r() * 400, py = 150 + r() * 200;
+    x.moveTo(px, py);
+    for (let k = 0; k < 6; k++) { px += (r() - 0.3) * 90; py += (r() - 0.5) * 80; x.quadraticCurveTo(px - 20, py - 40, px, py); }
+    x.stroke();
+  }
+  x.font = "bold 64px sans-serif";
+  x.fillStyle = colores[Math.floor(r() * colores.length)];
+  x.strokeStyle = "#111"; x.lineWidth = 5;
+  x.strokeText("VLC", 150, 270); x.fillText("VLC", 150, 270);
+  suciedad(x, 512, 448, 53, 10, 0.2);
+  x.fillStyle = "#6f6a62";
+  x.fillRect(0, 410, 512, 38);
   return c;
 }
 
@@ -233,6 +331,92 @@ function texturaFachada(conBalcon, semilla) {
     x.fillStyle = "#d8d2c6";
     x.fillRect(vx - 10, vy + vh, vw + 20, 12);
   }
+  churretes(x, [vx + 10, vx + vw - 10], vy + vh + 10, 110, 26, 0.16);
+  if (r() < 0.6) aireAcondicionado(x, r() < 0.5 ? 40 : 392, 250);
+  suciedad(x, 512, 410, semilla + 5, 6, 0.08);
+  return c;
+}
+
+function aireAcondicionado(x, px, py) {
+  x.fillStyle = "#d9d9d6";
+  x.fillRect(px, py, 82, 58);
+  x.fillStyle = "#9a9a97";
+  x.beginPath(); x.arc(px + 50, py + 29, 21, 0, Math.PI * 2); x.fill();
+  x.strokeStyle = "#6f6f6c"; x.lineWidth = 2;
+  for (let i = -18; i <= 18; i += 6) { x.beginPath(); x.moveTo(px + 32, py + 29 + i); x.lineTo(px + 68, py + 29 + i); x.stroke(); }
+  churretes(x, [px + 20], py + 58, 90, 6, 0.25);
+}
+
+/** Fachada de ladrillo visto con ventana (no se tiñe). */
+function texturaLadrillo(semilla) {
+  const [c, x] = lienzo(512, 410);
+  const r = aleatorio(semilla);
+  x.fillStyle = "#6e3b2a";
+  x.fillRect(0, 0, 512, 410);
+  const ah = 13, aw = 40;
+  for (let f = 0; f * ah < 410; f++) {
+    const off = (f % 2) * aw / 2;
+    for (let px = -aw; px < 512 + aw; px += aw) {
+      const v = 0.8 + r() * 0.35;
+      x.fillStyle = `rgb(${(150 * v) | 0},${(72 * v) | 0},${(50 * v) | 0})`;
+      x.fillRect(px + off + 1, f * ah + 1, aw - 2, ah - 2);
+    }
+  }
+  ruido(x, 512, 410, 6000, 100, 80, 0.12, semilla + 1, 2);
+  // ventana con dintel de piedra
+  const vx = 186, vy = 80, vw = 140, vh = 210;
+  x.fillStyle = "#cfc6b4";
+  x.fillRect(vx - 16, vy - 22, vw + 32, 22);
+  x.fillRect(vx - 12, vy + vh, vw + 24, 14);
+  const g = x.createLinearGradient(vx, vy, vx + vw, vy + vh);
+  g.addColorStop(0, "#58718a"); g.addColorStop(0.5, "#27333f"); g.addColorStop(1, "#1a222b");
+  x.fillStyle = g;
+  x.fillRect(vx, vy, vw, vh);
+  x.strokeStyle = "#ece6da"; x.lineWidth = 6;
+  x.strokeRect(vx, vy, vw, vh);
+  x.beginPath(); x.moveTo(vx, vy + vh * 0.35); x.lineTo(vx + vw, vy + vh * 0.35); x.moveTo(vx + vw / 2, vy + vh * 0.35); x.lineTo(vx + vw / 2, vy + vh); x.stroke();
+  churretes(x, [vx + 8, vx + vw - 8], vy + vh + 14, 120, 20, 0.22);
+  if (r() < 0.5) aireAcondicionado(x, 30, 240);
+  suciedad(x, 512, 410, semilla + 2, 8, 0.12);
+  return c;
+}
+
+/** Fachada de sillería / piedra clara (edificios señoriales). Se tiñe poco. */
+function texturaPiedra(semilla) {
+  const [c, x] = lienzo(512, 410);
+  const r = aleatorio(semilla);
+  x.fillStyle = "#d6cbb5";
+  x.fillRect(0, 0, 512, 410);
+  for (let f = 0; f < 410; f += 41) {
+    x.fillStyle = "rgba(90,75,55,0.22)";
+    x.fillRect(0, f, 512, 3);
+    const off = (f / 41) % 2 ? 64 : 0;
+    for (let px = off; px < 512; px += 128) x.fillRect(px, f, 3, 41);
+  }
+  ruido(x, 512, 410, 9000, 190, 60, 0.12, semilla + 1, 2);
+  const vx = 166, vy = 60, vw = 180, vh = 290;
+  // moldura con frontón
+  x.fillStyle = "#e6ddca";
+  x.fillRect(vx - 24, vy - 30, vw + 48, 30);
+  x.beginPath(); x.moveTo(vx - 30, vy - 30); x.lineTo(vx + vw / 2, vy - 62); x.lineTo(vx + vw + 30, vy - 30); x.fill();
+  x.fillRect(vx - 18, vy, 18, vh); x.fillRect(vx + vw, vy, 18, vh);
+  const g = x.createLinearGradient(vx, vy, vx + vw, vy + vh);
+  g.addColorStop(0, "#6d8297"); g.addColorStop(0.45, "#2c3a47"); g.addColorStop(1, "#1b232c");
+  x.fillStyle = g;
+  x.fillRect(vx, vy, vw, vh);
+  x.strokeStyle = "#f2ede3"; x.lineWidth = 6; x.strokeRect(vx, vy, vw, vh);
+  x.beginPath(); x.moveTo(vx + vw / 2, vy); x.lineTo(vx + vw / 2, vy + vh); x.stroke();
+  // balcón de forja
+  x.fillStyle = "#bdb19a";
+  x.fillRect(vx - 44, vy + vh - 6, vw + 88, 18);
+  x.strokeStyle = "#151515"; x.lineWidth = 3;
+  x.strokeRect(vx - 40, vy + vh - 92, vw + 80, 86);
+  for (let i = vx - 40; i <= vx + vw + 40; i += 12) {
+    x.beginPath(); x.moveTo(i, vy + vh - 92); x.quadraticCurveTo(i + 6, vy + vh - 50, i, vy + vh - 6); x.stroke();
+  }
+  churretes(x, [vx - 30, vx + vw + 30], vy + vh + 12, 70, 30, 0.2);
+  suciedad(x, 512, 410, semilla + 2, 8, 0.1);
+  void r;
   return c;
 }
 
@@ -254,9 +438,22 @@ function texturaTejado() {
   return c;
 }
 
+/** Toldo de rayas (se tiñe con el color de la tienda). */
+function texturaToldo() {
+  const [c, x] = lienzo(256, 128);
+  for (let i = 0; i < 256; i += 32) {
+    x.fillStyle = (i / 32) % 2 ? "#f4f1ea" : "#b9b5ad";
+    x.fillRect(i, 0, 32, 128);
+  }
+  ruido(x, 256, 128, 2500, 150, 80, 0.12, 121, 2);
+  x.fillStyle = "rgba(0,0,0,0.15)";
+  x.fillRect(0, 112, 256, 16);
+  return c;
+}
+
 /** Texturas fijas compartidas por todas las celdas. */
 export async function crearTexturas() {
-  const [asfalto, acera, adoquin, cesped, pared, escaparate, fachadaA, fachadaB, medianera, tejado] = await Promise.all([
+  const [asfalto, acera, adoquin, cesped, pared, escaparate, fachadaA, fachadaB, medianera, tejado, ladrillo, piedra, persiana, toldo] = await Promise.all([
     aBytes(texturaAsfalto()),
     aBytes(texturaAcera()),
     aBytes(texturaAdoquin()),
@@ -267,8 +464,12 @@ export async function crearTexturas() {
     aBytes(texturaFachada(false, 91)),
     aBytes(texturaMedianera()),
     aBytes(texturaTejado()),
+    aBytes(texturaLadrillo(101)),
+    aBytes(texturaPiedra(111)),
+    aBytes(texturaPersiana()),
+    aBytes(texturaToldo()),
   ]);
-  return { asfalto, acera, adoquin, cesped, pared, escaparate, fachadaA, fachadaB, medianera, tejado };
+  return { asfalto, acera, adoquin, cesped, pared, escaparate, fachadaA, fachadaB, medianera, tejado, ladrillo, piedra, persiana, toldo };
 }
 
 // ---------------------------------------------------------------- letreros

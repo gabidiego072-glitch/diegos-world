@@ -7,7 +7,8 @@
  */
 import { ConstructorGlb, BLANCO } from "./constructorGlb.js";
 import { crearAtlasLetreros, categoriaDe, PLAZAS_ATLAS } from "./texturas.js";
-import { TODAS } from "./zona.js";
+import { TODAS, aparcamiento, puntoEnPoligono } from "./zona.js";
+import { cocheAparcado } from "./vehiculosGenerados.js";
 
 export const MATERIALES = {
   acera: { textura: "acera" },
@@ -19,6 +20,17 @@ export const MATERIALES = {
   pared: { textura: "pared", ajustarV: true, dobleCara: true },
   escaparate: { textura: "escaparate", ajustarV: true, dobleCara: true, rugosidad: 0.4 },
   letrero: { textura: "letreros", emisivo: [0.45, 0.45, 0.45], emisivoTextura: true },
+  ladrillo: { textura: "ladrillo", dobleCara: true },
+  piedra: { textura: "piedra", dobleCara: true },
+  persiana: { textura: "persiana", ajustarV: true, dobleCara: true },
+  toldo: { textura: "toldo", dobleCara: true },
+  cornisa: { color: [0.86, 0.83, 0.76, 1] },
+  carroceria: { color: [1, 1, 1, 1], metal: 0.35, rugosidad: 0.35, dobleCara: true },
+  cristalCoche: { color: [0.07, 0.09, 0.11, 1], metal: 0.5, rugosidad: 0.08, dobleCara: true },
+  neumatico: { color: [0.07, 0.07, 0.07, 1], dobleCara: true },
+  faroCoche: { color: [0.95, 0.95, 0.9, 1], emisivo: [0.25, 0.25, 0.22] },
+  pilotoCoche: { color: [0.6, 0.05, 0.05, 1], emisivo: [0.25, 0.02, 0.02] },
+  contenedor: { color: [0.2, 0.38, 0.22, 1], rugosidad: 0.7 },
   fachadaA: { textura: "fachadaA", dobleCara: true },
   fachadaB: { textura: "fachadaB", dobleCara: true },
   medianera: { textura: "medianera", dobleCara: true },
@@ -137,6 +149,7 @@ function calles(g, zona, dentro, H) {
       if (calle.clase === "coche") {
         bordillos(g, zona, calle, a, ux, uy, nx, ny, L, H);
         marcas(g, zona, calle, a, ux, uy, nx, ny, L, acum[i], H);
+        aparcados(g, zona, calle, i, a, ux, uy, nx, ny, L, H);
       }
     }
     // Discos en los vértices: rellenan curvas y cruces.
@@ -204,6 +217,31 @@ function marcas(g, zona, calle, a, ux, uy, nx, ny, L, s0, H) {
         return [x, y, H(x, y) + Z.marca];
       };
       g.quadSuelo("marca", p(ini, -ANCHO / 2), p(fin, -ANCHO / 2), p(fin, ANCHO / 2), p(ini, ANCHO / 2), 1);
+    }
+  }
+}
+
+/** Coches aparcados (y algún contenedor de basura) junto al bordillo. */
+function aparcados(g, zona, calle, i, a, ux, uy, nx, ny, L, H) {
+  const lados = aparcamiento(calle);
+  const angulo = Math.atan2(uy, ux);
+  for (const [lado, signo] of [["der", -1], ["izq", 1]]) {
+    if (!lados[lado]) continue;
+    const off = (calle.hw - 1.15) * signo;
+    let k = 0;
+    for (let t = 3; t < L - 2.5; t += 5.6, k++) {
+      const x = a[0] + ux * t + nx * off, y = a[1] + uy * t + ny * off;
+      if (zona.dentroDeCalzada(x, y, calle, -0.5) || zona.cercaDeCruce(x, y, 7)) continue;
+      const r = hash(calle.id * 131 + i * 17 + k * 7 + (signo > 0 ? 3 : 0));
+      const z = H(x, y) + Z.coche;
+      if (r < 0.07) {
+        g.caja("contenedor", x, y, z, 1.5, 1.15, 1.25, angulo);
+        g.caja("metal", x, y, z + 1.25, 1.55, 1.2, 0.1, angulo);
+      } else if (r < 0.72) {
+        // En calles de doble sentido, los de la izquierda miran al revés.
+        const ang = !calle.sentidoUnico && signo > 0 ? angulo + Math.PI : angulo;
+        cocheAparcado(g, x, y, z, ang, calle.id * 7 + i * 131 + k * 31 + signo);
+      }
     }
   }
 }
@@ -358,6 +396,28 @@ function banco(g, x, y, z, ang) {
 
 const PLANTA_BAJA = 3.5;
 
+function colorHex(hex) {
+  const v = parseInt(hex.slice(1), 16);
+  // Aclarado: el toldo es de tela, menos saturado que el letrero.
+  return [((v >> 16) & 255) / 255 * 0.7 + 0.3, ((v >> 8) & 255) / 255 * 0.7 + 0.3, (v & 255) / 255 * 0.7 + 0.3];
+}
+
+/** Casetones, aparatos de aire acondicionado, depósitos y antenas en las azoteas. */
+function trastosAzotea(g, e, z) {
+  const n = 1 + Math.floor(hash(e.id + 99) * 4);
+  for (let k = 0; k < n; k++) {
+    const r1 = hash(e.id * 13 + k), r2 = hash(e.id * 17 + k * 5);
+    const x = e.cx + (r1 - 0.5) * (e.maxx - e.minx) * 0.6;
+    const y = e.cy + (r2 - 0.5) * (e.maxy - e.miny) * 0.6;
+    if (!puntoEnPoligono(x, y, e.anillo)) continue;
+    const tipo = hash(e.id + k * 3);
+    if (tipo < 0.3) g.caja("medianera", x, y, z, 2.4, 2.2, 2.3, r1 * 3, [0.85, 0.83, 0.8]);
+    else if (tipo < 0.65) g.caja("cornisa", x, y, z, 1.1, 0.7, 0.8, r2 * 3, [0.75, 0.75, 0.74]);
+    else if (tipo < 0.85) g.cilindro("metal", x, y, z, 0.6, 1.3, [1.6, 1.6, 1.6], 10);
+    else g.cilindro("metal", x, y, z, 0.04, 3.5, BLANCO, 4);
+  }
+}
+
 function fachadas(g, zona, dentro, H, opciones) {
   const completo = opciones.modo === "completo";
   const letreros = [];
@@ -376,7 +436,9 @@ function fachadas(g, zona, dentro, H, opciones) {
     }
     const bajito = arriba - base < 4.6;
     const tinte = PALETA_FACHADAS[Math.floor(hash(e.id) * PALETA_FACHADAS.length)];
-    const materialPisos = hash(e.id + 7) < 0.6 ? "fachadaA" : "fachadaB";
+    const hm = hash(e.id + 7);
+    const materialPisos = hm < 0.35 ? "fachadaA" : hm < 0.6 ? "fachadaB" : hm < 0.8 ? "ladrillo" : "piedra";
+    const tintePisos = materialPisos === "ladrillo" ? BLANCO : materialPisos === "piedra" ? [0.96, 0.94, 0.9] : tinte;
 
     for (let i = 0; i < A.length; i++) {
       const a = A[i], b = A[(i + 1) % A.length];
@@ -384,7 +446,7 @@ function fachadas(g, zona, dentro, H, opciones) {
       if (L < 0.3) continue;
       const n = zona.normalExterior(e, i);
       const locales = e.locales.filter((l) => l.pared === i);
-      const mat = locales.length ? "escaparate" : "pared";
+      const mat = locales.length ? "escaparate" : hash(e.id * 31 + i) < 0.28 ? "persiana" : "pared";
       const suelo = H((a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
       // Orden de los vértices para que la cara buena mire hacia fuera.
       // Visto desde fuera, la derecha es (-ny, nx): si a→b va hacia la derecha, el orden es a, b.
@@ -403,7 +465,17 @@ function fachadas(g, zona, dentro, H, opciones) {
         muro(mat, base, finBaja, [0, v(base), rep, v(base), rep, v(finBaja), 0, v(finBaja)], mat === "pared" ? tinte : BLANCO);
         if (arriba > finBaja + 0.05) {
           const vp = (z) => 1 - (z - finBaja) / 3.2;
-          muro(materialPisos, finBaja, arriba, [0, vp(finBaja), rep, vp(finBaja), rep, vp(arriba), 0, vp(arriba)], tinte);
+          muro(materialPisos, finBaja, arriba, [0, vp(finBaja), rep, vp(finBaja), rep, vp(arriba), 0, vp(arriba)], tintePisos);
+        }
+        // Detalles que dan volumen: imposta sobre el bajo, cornisa arriba y antepecho de la azotea.
+        const ang = Math.atan2(dy, dx);
+        const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+        if (arriba > finBaja + 1) {
+          g.caja("cornisa", mx + n[0] * 0.08, my + n[1] * 0.08, finBaja - 0.05, L, 0.16, 0.22, ang);
+          if (completo) g.caja("cornisa", mx + n[0] * 0.15, my + n[1] * 0.15, arriba - 0.4, L + 0.25, 0.3, 0.4, ang);
+        }
+        if (completo && !bajito) {
+          muro("medianera", arriba, arriba + 0.9, [0, 0, L / 4, 0, L / 4, -0.22, 0, -0.22], tinte);
         }
       }
 
@@ -430,6 +502,7 @@ function fachadas(g, zona, dentro, H, opciones) {
       }
     }
     if (completo || bajito) g.poligono(completo && !bajito ? "tejado" : "bordillo", A, arriba, 4);
+    if (completo && !bajito && e.area > 120) trastosAzotea(g, e, arriba);
   }
 
   if (!letreros.length) return [];
@@ -444,6 +517,16 @@ function fachadas(g, zona, dentro, H, opciones) {
     const ang = Math.atan2(s.n[1], s.n[0]) - Math.PI / 2; // +y local = hacia la calle
     const frente = s.indice < PLAZAS_ATLAS ? { clave: "letrero", uv: uvDe(s.indice) } : null;
     g.caja("metal", s.x, s.y, s.z, s.ancho, 0.16, 0.55, ang, BLANCO, frente);
+    // Toldo de rayas en algunas tiendas.
+    if (hash(s.indice * 977 + Math.round(s.x)) < 0.55) {
+      const ex = Math.cos(ang), ey = Math.sin(ang); // a lo largo de la pared
+      const w = s.ancho / 2, nx = s.n[0], ny = s.n[1];
+      const z0 = s.z - 0.2, z1 = s.z - 0.75, sale = 1.3;
+      const color = colorHex(letreros[s.indice].categoria.fondo);
+      const p = (k, fuera, z) => [s.x + ex * w * k + nx * fuera, s.y + ey * w * k + ny * fuera, z];
+      g.quad("toldo", p(-1, 0, z0), p(1, 0, z0), p(1, sale, z1), p(-1, sale, z1), [nx * 0.4, ny * 0.4, 0.9], [0, 0, 1, 0, 1, 1, 0, 1], color);
+      g.quad("toldo", p(-1, sale, z1), p(1, sale, z1), p(1, sale, z1 - 0.25), p(-1, sale, z1 - 0.25), [nx, ny, 0], [0, 0.85, 1, 0.85, 1, 1, 0, 1], color);
+    }
   }
   return letreros;
 }

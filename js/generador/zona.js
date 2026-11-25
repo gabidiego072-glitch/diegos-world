@@ -321,3 +321,16 @@ export function puntoEnPoligono(x, y, anillo) {
   }
   return dentro;
 }
+
+/**
+ * ¿Hay coches aparcados en esta calle y en qué lado? (der/izq respecto al sentido en que está dibujada).
+ * Lo usan el generador (coches aparcados) y los NPC (para no circular por encima de ellos).
+ */
+export function aparcamiento(calle) {
+  if (calle.clase !== "coche" || !["residential", "tertiary", "secondary", "unclassified", "secondary_link", "tertiary_link"].includes(calle.tipo)) {
+    return { izq: false, der: false };
+  }
+  if (calle.sentidoUnico) return { der: calle.ancho >= 7.5, izq: calle.ancho >= 10.5 };
+  const ambos = calle.ancho >= 11;
+  return { der: ambos, izq: ambos };
+}

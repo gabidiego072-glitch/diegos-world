@@ -23,7 +23,7 @@ export const CALIDADES = {
 export const CALIDAD_POR_DEFECTO = "baja"; // pensado para PCs flojos
 
 /** Hora fija del "sol" (UTC) para que el coche y el personaje se vean iluminados. */
-export const HORA_SOL = "2026-06-21T10:30:00Z";
+export const HORA_SOL = "2026-09-20T15:40:00Z"; // media tarde: sol más bajo y cálido, sombras largas
 
 /** Física del coche (metros, segundos, radianes). */
 export const COCHE = {
@@ -87,8 +87,24 @@ export const CLAVE_CIUDAD = "diegosworld.ciudadGenerada";
 
 /** NPCs (cantidad según la calidad gráfica). */
 export const NPC = {
-  coches: { baja: 4, alta: 8 },
+  coches: { baja: 8, alta: 16 },
   peatones: { baja: 10, alta: 22 },
   radioAparicion: [35, 170],
   radioDesaparicion: 230,
+};
+
+/**
+ * Estilo visual inspirado en GTA IV (corrección de color, bruma, viñeta, grano).
+ * Sube densidadBruma para más neblina; baja saturacion para colores más apagados.
+ */
+export const ESTILO = {
+  densidadBruma: 0.0021,
+  colorBruma: [0.72, 0.7, 0.64],
+  saturacion: 0.74,
+  tinte: [1.07, 1.0, 0.86],
+  contraste: 1.13,
+  vineta: 0.9,
+  grano: 0.03,
+  colorSol: "#ffe2b8",
+  intensidadSol: 2.1,
 };

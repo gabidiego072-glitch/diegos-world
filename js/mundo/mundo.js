@@ -7,6 +7,7 @@
  *  - No mezclamos las teselas de Google con el globo/terreno de otro proveedor: el globo está oculto.
  */
 import { CALIDADES, HORA_SOL } from "../config.js";
+import { aplicarEstilo, efectosAlta } from "./estilo.js";
 
 export async function crearMundo(contenedor, token, nivelCalidad) {
   Cesium.Ion.defaultAccessToken = token;
@@ -54,6 +55,7 @@ export async function crearMundo(contenedor, token, nivelCalidad) {
   );
   scene.primitives.add(tileset);
 
+  aplicarEstilo(viewer);
   const mundo = { viewer, scene, tileset, nivelCalidad };
   aplicarCalidad(mundo, nivelCalidad);
   return mundo;
@@ -68,6 +70,7 @@ export function aplicarCalidad(mundo, nivel) {
   viewer.resolutionScale = c.escalaResolucion;
   scene.msaaSamples = c.msaa;
   scene.postProcessStages.fxaa.enabled = c.fxaa;
+  efectosAlta(viewer, nivel === "alta");
   mundo.nivelCalidad = nivel;
 }
 

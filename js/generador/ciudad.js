@@ -212,7 +212,7 @@ export class GeneradorCiudad {
     const modelo = await Cesium.Model.fromGltfAsync({
       url: c.url,
       modelMatrix: this.proy.enu,
-      shadows: Cesium.ShadowMode.DISABLED,
+      shadows: Cesium.ShadowMode.ENABLED,
       incrementallyLoadTextures: false,
     });
     if (gen !== this.generacion || !this.celdas.has(this.clave(c.i, c.j))) {

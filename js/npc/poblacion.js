@@ -6,6 +6,9 @@
  * Usan el mismo "grafo" de calles de OpenStreetMap, así que funcionan en cualquier ciudad.
  */
 import { MODELOS, NPC } from "../config.js";
+import { aparcamiento } from "../generador/zona.js";
+import { crearModelosTrafico } from "../generador/vehiculosGenerados.js";
+import { MATERIALES } from "../generador/construirCelda.js";
 
 const ARRIBA_CALZADA = 0.06;
 
@@ -85,13 +88,11 @@ export class Poblacion {
   async cargarModelo(n) {
     n.cargando = true;
     try {
-      const def = n.tipo === "coche" ? MODELOS.coche : MODELOS.peaton;
-      const m = await Cesium.Model.fromGltfAsync({ url: def.url, shadows: Cesium.ShadowMode.DISABLED, modelMatrix: this.matrizDe(n) });
-      if (n.tipo === "coche") {
-        m.color = Cesium.Color.fromHsl(Math.random(), 0.55, 0.45, 1);
-        m.colorBlendMode = Cesium.ColorBlendMode.MIX;
-        m.colorBlendAmount = 0.35;
-      } else {
+      // Coches: modelos ligeros generados (variados); peatones: el personaje animado.
+      if (n.tipo === "coche" && !this.urlsTrafico) this.urlsTrafico = crearModelosTrafico(MATERIALES, 10);
+      const url = n.tipo === "coche" ? this.urlsTrafico[Math.floor(Math.random() * this.urlsTrafico.length)] : MODELOS.peaton.url;
+      const m = await Cesium.Model.fromGltfAsync({ url, shadows: Cesium.ShadowMode.ENABLED, modelMatrix: this.matrizDe(n) });
+      if (n.tipo !== "coche") {
         m.color = Cesium.Color.fromHsl(Math.random(), 0.35, 0.6, 1);
         m.colorBlendMode = Cesium.ColorBlendMode.MIX;
         m.colorBlendAmount = 0.3;
@@ -130,7 +131,7 @@ export class Poblacion {
       const ruta = haciaDelante ? calle.puntos.slice(i) : calle.puntos.slice(0, i + 2).reverse();
       const nodos = haciaDelante ? calle.nodos.slice(i) : calle.nodos.slice(0, i + 2).reverse();
       Object.assign(n, {
-        activo: true, calle, ruta, nodos, k: 0,
+        activo: true, calle, ruta, nodos, k: 0, adelante: haciaDelante,
         s: haciaDelante ? Math.hypot(x - a[0], y - a[1]) : Math.hypot(x - b[0], y - b[1]),
         vel: n.tipo === "coche" ? 6 : 1.3,
         velObjetivo: n.tipo === "coche" ? velocidadCalle(calle) : 1.1 + Math.random() * 0.5,
@@ -204,9 +205,9 @@ export class Poblacion {
     const opciones = [];
     for (const { calle, i } of z.nodoACalles.get(nodo) || []) {
       if (n.tipo === "coche" ? calle.clase !== "coche" || calle.tipo === "service" : calle.clase === "bici") continue;
-      if (i < calle.puntos.length - 1) opciones.push({ calle, ruta: calle.puntos.slice(i), nodos: calle.nodos.slice(i) });
+      if (i < calle.puntos.length - 1) opciones.push({ calle, adelante: true, ruta: calle.puntos.slice(i), nodos: calle.nodos.slice(i) });
       if (i > 0 && (n.tipo === "peaton" || !calle.sentidoUnico)) {
-        opciones.push({ calle, ruta: calle.puntos.slice(0, i + 1).reverse(), nodos: calle.nodos.slice(0, i + 1).reverse() });
+        opciones.push({ calle, adelante: false, ruta: calle.puntos.slice(0, i + 1).reverse(), nodos: calle.nodos.slice(0, i + 1).reverse() });
       }
     }
     // No dar media vuelta si hay otra opción.
@@ -215,7 +216,7 @@ export class Poblacion {
     if (!lista.length) return false;
     const o = lista[Math.floor(Math.random() * lista.length)];
     const mediaVuelta = !sinVolver.length;
-    Object.assign(n, { calle: o.calle, ruta: o.ruta, nodos: o.nodos, k: 0 });
+    Object.assign(n, { calle: o.calle, ruta: o.ruta, nodos: o.nodos, k: 0, adelante: o.adelante });
     if (n.tipo === "coche") n.velObjetivo = velocidadCalle(o.calle);
     if (mediaVuelta && n.tipo === "peaton") n.lado = -n.lado; // seguir en la misma acera
     n.carril = Math.min(n.carril, Math.max(0, o.calle.carriles - 1));
@@ -231,12 +232,16 @@ export class Poblacion {
     const c = n.calle;
     let desplazamiento;
     if (n.tipo === "coche") {
-      if (c.sentidoUnico) {
-        const anchoCarril = c.ancho / Math.max(1, c.carriles);
-        desplazamiento = -c.hw + anchoCarril * (n.carril + 0.5);
-      } else {
-        desplazamiento = Math.max(1.5, c.hw * 0.5);
-      }
+      // Carriles libres: sin pisar los coches aparcados.
+      const ap = aparcamiento(c);
+      const derecha = n.adelante ? ap.der : ap.izq, izquierda = n.adelante ? ap.izq : ap.der;
+      let lo, hi;
+      if (c.sentidoUnico) { lo = -c.hw + (izquierda ? 2.3 : 0.4); hi = c.hw - (derecha ? 2.3 : 0.4); }
+      else { lo = 0.3; hi = c.hw - (derecha ? 2.3 : 0.3); }
+      if (hi < lo) hi = lo;
+      const carriles = Math.max(1, Math.round((hi - lo) / 3.1));
+      const k = Math.min(n.carril, carriles - 1);
+      desplazamiento = lo + ((hi - lo) / carriles) * (k + 0.5);
     } else {
       desplazamiento = c.clase === "coche" ? (c.hw + 1.1) * n.lado : c.clase === "peaton" && c.hw > 2 ? c.hw * 0.5 * n.lado : 0;
     }
@@ -245,7 +250,7 @@ export class Poblacion {
     const objetivo = Math.atan2(uy, ux);
     if (n.angulo === undefined) n.angulo = objetivo;
     else n.angulo += Math.atan2(Math.sin(objetivo - n.angulo), Math.cos(objetivo - n.angulo)) * 0.2;
-    n.z = this.ciudad.campo.h(n.x, n.y) + (n.tipo === "coche" ? ARRIBA_CALZADA + (MODELOS.coche.alturaBase || 0) : 0);
+    n.z = this.ciudad.campo.h(n.x, n.y) + (n.tipo === "coche" ? ARRIBA_CALZADA : 0);
     if (n.modelo) this.ciudad.proy.matrizObjeto(n.x, n.y, n.z, n.angulo, n.modelo.modelMatrix);
   }
 

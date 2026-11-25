@@ -125,7 +125,7 @@ export class CuerpoTerrestre {
 
 /** Carga un modelo glTF/GLB y lo añade a la escena. */
 export async function cargarModelo(scene, { url, escala = 1 }) {
-  const modelo = await Cesium.Model.fromGltfAsync({ url, scale: escala, shadows: Cesium.ShadowMode.DISABLED });
+  const modelo = await Cesium.Model.fromGltfAsync({ url, scale: escala, shadows: Cesium.ShadowMode.ENABLED });
   scene.primitives.add(modelo);
   return modelo;
 }

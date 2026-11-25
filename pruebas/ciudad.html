@@ -113,11 +113,15 @@
 // Ábrelo con un servidor local:  python3 -m http.server  →  http://localhost:8000/pruebas/ciudad.html
 import { Juego } from "../js/modos/juego.js";
 import { Entrada } from "../js/jugador/entrada.js";
+import { aplicarEstilo, efectosAlta } from "../js/mundo/estilo.js";
+import { HORA_SOL } from "../js/config.js";
 document.getElementById("pantalla-inicio").hidden = true;
 const viewer = new Cesium.Viewer("mundo", { globe: false, baseLayer: false, baseLayerPicker: false, geocoder: false, homeButton: false,
   sceneModePicker: false, navigationHelpButton: false, animation: false, timeline: false, fullscreenButton: false,
   infoBox: false, selectionIndicator: false, skyAtmosphere: new Cesium.SkyAtmosphere() });
-viewer.clock.currentTime = Cesium.JulianDate.fromIso8601("2026-06-21T10:30:00Z");
+viewer.clock.currentTime = Cesium.JulianDate.fromIso8601(HORA_SOL);
+aplicarEstilo(viewer);
+efectosAlta(viewer, location.search.includes("alta"));
 const datos = await (await fetch("datos/osm_xativa.json")).json();
 // ?tileset → carga un tileset de ejemplo de Cesium (en otro sitio del mundo) solo para probar el recorte.
 let tileset = {};

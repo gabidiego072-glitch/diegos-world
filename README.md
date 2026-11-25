@@ -46,7 +46,11 @@ de videojuego con los datos reales de **OpenStreetMap**:
 3. **Edificios enteros, con su altura real** (medida en la Valencia de Google): fachadas con ventanas,
    balcones y persianas, medianeras, azoteas y, abajo, **escaparates con el nombre real de cada tienda**
    (farmacias, heladerías, cafeterías…).
-4. **Coches y peatones NPC** que circulan por sus carriles y pasean por las aceras.
+4. **Coches y peatones NPC** que circulan por sus carriles y pasean por las aceras, y **coches aparcados**
+   junto a los bordillos, contenedores, toldos, persianas con grafitis, aires acondicionados…
+
+**Estilo visual tipo GTA IV**: colores algo apagados y cálidos, bruma en la distancia, viñeta y grano suave.
+En calidad **Alta** se añaden resplandor (bloom) y sombras. Los valores están en `js/config.js` → `ESTILO`.
 
 En esa zona se quita la Valencia “derretida” de Google **menos los monumentos** (Ciudad de las Artes,
 Estación del Norte, Plaza de Toros, iglesias, edificios históricos…), que se quedan con su forma real.

@@ -39,6 +39,8 @@ Ideas futuras: economía, inventario, policía, misiones, cooperativo, zombis, c
 ## Estilo gráfico
 
 Primero **realista simplificado** para validar la jugabilidad; más adelante evolución hacia **hiperrealista**.
+Referencia visual actual pedida por Diego: **GTA IV** (ciudad sucia y creíble, paleta cálida y apagada, bruma,
+mucho detalle de calle: coches aparcados, toldos, persianas con grafitis, aires acondicionados, contenedores).
 
 ## Estado actual: prototipo web v0.1
 
@@ -77,6 +79,10 @@ js/generador/           MODO HÍBRIDO (calles generadas bajo demanda con OpenStr
   ciudad.js             Gestor: celdas 3×3 alrededor del jugador, recorte de Google (ClippingPlaneCollection:
                         por debajo de CIUDAD.corte y dentro de la caja generada), reinicio al alejarse.
   proyeccion.js         lon/lat ↔ metros locales y matriz ENU de la zona.
+js/mundo/estilo.js      Estilo visual GTA IV: post-proceso (color, bruma por profundidad, viñeta, grano),
+                        luz de tarde; en Alta bloom y sombras. Parámetros en config.ESTILO.
+js/generador/vehiculosGenerados.js  Coches ligeros por código (perfil extruido): aparcados dentro de la celda
+                        y modelos sueltos para el tráfico NPC.
 js/npc/poblacion.js     Fase 4: coches NPC por carriles (respetan sentido único) y peatones por aceras.
 js/modos/juego.js       Orquesta modos, teletransporte y bucle principal.
 assets/modelos/         coche_realista.glb (Car Concept, Khronos, CC-BY 4.0), peaton.glb (Cesium Man, CC-BY 4.0)

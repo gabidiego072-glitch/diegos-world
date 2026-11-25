@@ -119,7 +119,13 @@ const viewer = new Cesium.Viewer("mundo", { globe: false, baseLayer: false, base
   infoBox: false, selectionIndicator: false, skyAtmosphere: new Cesium.SkyAtmosphere() });
 viewer.clock.currentTime = Cesium.JulianDate.fromIso8601("2026-06-21T10:30:00Z");
 const datos = await (await fetch("datos/osm_xativa.json")).json();
-const juego = new Juego({ viewer, scene: viewer.scene, tileset: {}, nivelCalidad: "baja" }, new Entrada(), { alSalir() {} });
+// ?tileset → carga un tileset de ejemplo de Cesium (en otro sitio del mundo) solo para probar el recorte.
+let tileset = {};
+if (location.search.includes("tileset")) {
+  tileset = await Cesium.Cesium3DTileset.fromUrl("https://raw.githubusercontent.com/CesiumGS/cesium/1.146/Specs/Data/Cesium3DTiles/Batched/BatchedColors/tileset.json");
+  viewer.scene.primitives.add(tileset);
+}
+const juego = new Juego({ viewer, scene: viewer.scene, tileset, nivelCalidad: "baja" }, new Entrada(), { alSalir() {} });
 juego.ciudad.descargar = async () => datos.elements;
 window.juego = juego;
 juego.iniciar().then(() => { window.listo = true; }).catch((e) => { window.fallo = String(e.stack || e); console.error(e); });

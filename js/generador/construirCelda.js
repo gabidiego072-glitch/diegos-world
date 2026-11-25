@@ -19,6 +19,11 @@ export const MATERIALES = {
   pared: { textura: "pared", ajustarV: true, dobleCara: true },
   escaparate: { textura: "escaparate", ajustarV: true, dobleCara: true, rugosidad: 0.4 },
   letrero: { textura: "letreros", emisivo: [0.45, 0.45, 0.45], emisivoTextura: true },
+  fachadaA: { textura: "fachadaA", dobleCara: true },
+  fachadaB: { textura: "fachadaB", dobleCara: true },
+  medianera: { textura: "medianera", dobleCara: true },
+  tejado: { textura: "tejado", dobleCara: true },
+  agua: { color: [0.22, 0.42, 0.52, 1], metal: 0.4, rugosidad: 0.08 },
   metal: { color: [0.23, 0.24, 0.26, 1], metal: 0.5, rugosidad: 0.5 },
   madera: { color: [0.5, 0.33, 0.2, 1] },
   tronco: { color: [0.38, 0.28, 0.2, 1] },
@@ -30,7 +35,7 @@ export const MATERIALES = {
 };
 
 // Alturas sobre el suelo (m) de cada capa, para que no se pisen entre sí.
-const Z = { verde: 0.03, plaza: 0.035, peaton: 0.04, bici: 0.045, coche: 0.06, marca: 0.1, cebra: 0.105 };
+const Z = { agua: 0.025, verde: 0.03, plaza: 0.035, peaton: 0.04, bici: 0.045, coche: 0.06, marca: 0.1, cebra: 0.105 };
 const PALETA_FACHADAS = [
   [0.95, 0.91, 0.82], [0.9, 0.78, 0.6], [0.86, 0.66, 0.52], [0.97, 0.96, 0.93],
   [0.83, 0.82, 0.79], [0.96, 0.9, 0.72], [0.78, 0.84, 0.86], [0.92, 0.84, 0.78],
@@ -49,11 +54,13 @@ function hash(n) {
  * @param {import("./zona.js").Zona} zona
  * @param {{x0:number,y0:number,x1:number,y1:number}} celda   límites en metros locales
  * @param {(x:number,y:number)=>number} H   altura del suelo
- * @param {number} techo   altura absoluta hasta donde llegan los bajos (justo por encima del recorte de Google)
+ * @param {{modo:"completo"|"bajos", techo:number}} opciones
+ *    modo "completo": edificios enteros (Google se recorta del todo salvo los monumentos).
+ *    modo "bajos": solo las plantas bajas hasta `techo` (Google se recorta por debajo de ~3,6 m).
  * @param {object} texturas  texturas compartidas
  * @returns {Promise<Uint8Array|null>} GLB
  */
-export async function construirCelda(zona, celda, H, techo, texturas) {
+export async function construirCelda(zona, celda, H, opciones, texturas) {
   const g = new ConstructorGlb(MATERIALES);
   const dentro = (x, y) => x >= celda.x0 && x < celda.x1 && y >= celda.y0 && y < celda.y1;
 
@@ -61,7 +68,7 @@ export async function construirCelda(zona, celda, H, techo, texturas) {
   zonasVerdesYPlazas(g, zona, dentro, H);
   calles(g, zona, dentro, H);
   mobiliario(g, zona, dentro, H);
-  const letreros = fachadas(g, zona, dentro, H, techo);
+  const letreros = fachadas(g, zona, dentro, H, opciones);
 
   if (g.vacio) return null;
   const imagenes = { ...texturas };
@@ -93,6 +100,11 @@ function zonasVerdesYPlazas(g, zona, dentro, H) {
     if (!dentro(cx, cy)) continue;
     const color = v.tipo === "pista" ? [0.75, 0.55, 0.45] : BLANCO;
     g.poligono(v.tipo === "pista" ? "adoquin" : "cesped", v.anillo, (x, y) => H(x, y) + Z.verde, 3, color);
+  }
+  for (const a of zona.aguas) {
+    const [cx, cy] = centroide(a.anillo);
+    if (!dentro(cx, cy)) continue;
+    g.poligono("agua", a.anillo, (x, y) => H(x, y) + Z.agua, 4);
   }
   for (const pl of zona.plazas) {
     const [cx, cy] = centroide(pl.anillo);
@@ -344,16 +356,27 @@ function banco(g, x, y, z, ang) {
 
 // ------------------------------------------------------------------ FASE 3
 
-function fachadas(g, zona, dentro, H, techo) {
+const PLANTA_BAJA = 3.5;
+
+function fachadas(g, zona, dentro, H, opciones) {
+  const completo = opciones.modo === "completo";
   const letreros = [];
   const pendientes = []; // letreros a colocar cuando tengamos el atlas
   for (const e of zona.edificios) {
     if (!dentro(e.cx, e.cy)) continue;
+    if (completo && e.emblematico) continue; // monumento: se queda el modelo real de Google
     const A = e.anillo;
     const base = Math.min(...A.map((p) => H(p[0], p[1]))) - 0.3;
-    const bajito = e.altura !== undefined && e.altura < 4.2;
-    const arriba = bajito ? base + 0.3 + e.altura : techo;
+    let arriba;
+    if (completo) {
+      const alto = e.techoMedido !== undefined ? e.techoMedido - (base + 0.3) : e.altura ?? 15;
+      arriba = base + 0.3 + Math.max(3, Math.min(alto, 120));
+    } else {
+      arriba = e.altura !== undefined && e.altura < 4.2 ? base + 0.3 + e.altura : opciones.techo;
+    }
+    const bajito = arriba - base < 4.6;
     const tinte = PALETA_FACHADAS[Math.floor(hash(e.id) * PALETA_FACHADAS.length)];
+    const materialPisos = hash(e.id + 7) < 0.6 ? "fachadaA" : "fachadaB";
 
     for (let i = 0; i < A.length; i++) {
       const a = A[i], b = A[(i + 1) % A.length];
@@ -368,12 +391,21 @@ function fachadas(g, zona, dentro, H, techo) {
       const haciaDerecha = -dx * n[1] + dy * n[0] > 0;
       const [p, q] = haciaDerecha ? [a, b] : [b, a];
       const rep = Math.max(1, Math.round(L / 4));
-      const v = (z) => 1 - (z - suelo) / 3.5;
-      g.quad(mat,
-        [p[0], p[1], base], [q[0], q[1], base], [q[0], q[1], arriba], [p[0], p[1], arriba],
-        [n[0], n[1], 0],
-        [0, v(base), rep, v(base), rep, v(arriba), 0, v(arriba)],
-        mat === "pared" ? tinte : BLANCO);
+      // ¿Pared pegada a otro edificio (medianera)? Entonces sin ventanas.
+      const medianera = !!zona.edificioEn((a[0] + b[0]) / 2 + n[0] * 1.2, (a[1] + b[1]) / 2 + n[1] * 1.2);
+      const finBaja = Math.min(arriba, suelo + PLANTA_BAJA);
+      const v = (z) => 1 - (z - suelo) / PLANTA_BAJA;
+      const muro = (m, z0, z1, uv, color) => g.quad(m,
+        [p[0], p[1], z0], [q[0], q[1], z0], [q[0], q[1], z1], [p[0], p[1], z1], [n[0], n[1], 0], uv, color);
+      if (medianera) {
+        muro("medianera", base, arriba, [0, 0, L / 4, 0, L / 4, -(arriba - base) / 4, 0, -(arriba - base) / 4], tinte);
+      } else {
+        muro(mat, base, finBaja, [0, v(base), rep, v(base), rep, v(finBaja), 0, v(finBaja)], mat === "pared" ? tinte : BLANCO);
+        if (arriba > finBaja + 0.05) {
+          const vp = (z) => 1 - (z - finBaja) / 3.2;
+          muro(materialPisos, finBaja, arriba, [0, vp(finBaja), rep, vp(finBaja), rep, vp(arriba), 0, vp(arriba)], tinte);
+        }
+      }
 
       // Letreros de las tiendas de esta pared.
       let ocupadoHasta = -Infinity;
@@ -397,7 +429,7 @@ function fachadas(g, zona, dentro, H, techo) {
         letreros.push({ texto, categoria });
       }
     }
-    if (bajito) g.poligono("bordillo", A, arriba, 4);
+    if (completo || bajito) g.poligono(completo && !bajito ? "tejado" : "bordillo", A, arriba, 4);
   }
 
   if (!letreros.length) return [];

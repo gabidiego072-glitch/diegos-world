@@ -48,7 +48,9 @@ export class Juego {
     this.poblacion.ponerCalidad(mundo.nivelCalidad);
     this.ciudad.modelosExtra = () => this.poblacion.modelos();
     this.fisica.tileset = mundo.tileset instanceof Cesium.Cesium3DTileset ? mundo.tileset : null;
-    this.fisica.ignorarTilesetEn = (lon, lat) => this.ciudad.cubre(lon, lat);
+    // En modo "bajos" Google sigue ahí (recortado por abajo): los rayos lo ignoran en la zona generada.
+    // En modo "completo" el recorte ya lo quita y los monumentos que quedan deben ser sólidos.
+    this.fisica.ignorarTilesetEn = (lon, lat) => this.ciudad.modo === "bajos" && this.ciudad.cubre(lon, lat);
   }
 
   async iniciar() {

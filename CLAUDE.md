@@ -107,9 +107,13 @@ pruebas/ciudad.html     Modo híbrido sin Google con datos OSM guardados (prueba
 ## Modo híbrido (implementado)
 
 Las Google 3D Tiles se hacen con fotos aéreas: a ras de suelo se ven "derretidas". Solución (regla de oro):
-cerca del jugador se genera geometría limpia de juego con OpenStreetMap y a Google se le recorta lo que está
-por debajo de ~3,6 m solo en esa zona (se conservan fachadas altas y monumentos reales).
-- En la zona generada los rayos de física IGNORAN el tileset de Google (FisicaSuelo.ignorarTilesetEn).
+cerca del jugador se genera geometría limpia de juego con OpenStreetMap.
+- Modo "completo" (WebGL 2): ClippingPolygonCollection = caja de la zona con HUECOS en los monumentos
+  (zona.emblemas: wikidata/historic/heritage, iglesias, estaciones, estadios, puentes, museos…). Los edificios
+  normales se generan ENTEROS con la altura del tejado medida en Google (mediana de 3 muestras) antes de recortar.
+  El picking respeta el recorte, así que los monumentos de Google siguen siendo sólidos.
+- Modo "bajos" (reserva sin WebGL 2): ClippingPlaneCollection por debajo de ~3,6 m y solo plantas bajas;
+  ahí los rayos de física IGNORAN el tileset en la zona generada (FisicaSuelo.ignorarTilesetEn).
 - Las alturas se miden en Google ANTES de recortar cada celda.
 - En vuelo libre se oculta lo generado y se desactiva el recorte.
 - Si Overpass falla, se queda la vista de Google y se reintenta a los 20 s.

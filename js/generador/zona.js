@@ -57,6 +57,8 @@ export class Zona {
     this.cruces = [];
     this.bancos = [];
     this.locales = [];
+    this.aguas = [];
+    this.emblemas = [];   // huecos donde se conserva la Valencia de Google (monumentos, puentes)
     this.indiceSeg = new Map();
     this.indiceEdif = new Map();
     this.nodoACalles = new Map();
@@ -104,31 +106,31 @@ export class Zona {
       if (t["area:highway"] && cerrada) { this.plazas.push({ anillo: puntos.slice(0, -1) }); continue; }
 
       if (t.building && t.building !== "no" && t.building !== "roof" && cerrada && enSuperficie(t)) {
-        const anillo = puntos.slice(0, -1);
-        let area = 0, cx = 0, cy = 0;
-        for (let i = 0; i < anillo.length; i++) {
-          const [x1, y1] = anillo[i], [x2, y2] = anillo[(i + 1) % anillo.length];
-          const f = x1 * y2 - x2 * y1;
-          area += f; cx += (x1 + x2) * f; cy += (y1 + y2) * f;
-        }
-        area /= 2;
-        if (Math.abs(area) < 4) continue;
-        cx /= 6 * area; cy /= 6 * area;
-        const xs = anillo.map((q) => q[0]), ys = anillo.map((q) => q[1]);
-        const edif = {
-          id: w.id, anillo, antihorario: area > 0, area: Math.abs(area), cx, cy,
-          minx: Math.min(...xs), maxx: Math.max(...xs), miny: Math.min(...ys), maxy: Math.max(...ys),
-          altura: numero(t.height) ?? (numero(t["building:levels"]) ? numero(t["building:levels"]) * 3.2 : undefined),
-          tags: t, locales: [],
-        };
-        this.edificios.push(edif);
-        this.indexar(this.indiceEdif, edif.minx, edif.miny, edif.maxx, edif.maxy, edif);
+        this.crearEdificio(w.id, puntos.slice(0, -1), t);
+        continue;
+      }
+
+      if (cerrada && t.natural === "water") { this.aguas.push({ anillo: puntos.slice(0, -1) }); continue; }
+      if (cerrada && esMonumentoNoEdificio(t)) {
+        const hueco = this.crearHueco(puntos.slice(0, -1));
+        if ((hueco.maxx - hueco.minx) * (hueco.maxy - hueco.miny) < 60000) this.emblemas.push(hueco);
         continue;
       }
 
       if (cerrada && (/park|garden|playground|pitch/.test(t.leisure || "") || /grass|recreation_ground|village_green/.test(t.landuse || ""))) {
         this.verdes.push({ anillo: puntos.slice(0, -1), tipo: t.leisure === "pitch" ? "pista" : "cesped" });
       }
+    }
+
+    // Edificios que en OpenStreetMap son "relaciones" (p. ej. la Plaza de Toros, con patio interior).
+    for (const r of almacen.relaciones.values()) {
+      const t = r.tags || {};
+      if (!enSuperficie(t) || (!t.building && !esMonumentoNoEdificio(t))) continue;
+      const anillos = unirAnillos(r.members.filter((m) => m.type === "way" && m.role !== "inner" && m.geometry).map((m) => m.geometry.map(loc)));
+      anillos.forEach((anillo, k) => {
+        if (t.building) this.crearEdificio(r.id * 10 + k, anillo, t);
+        else this.emblemas.push(this.crearHueco(anillo));
+      });
     }
 
     for (const n of almacen.nodos.values()) {
@@ -147,6 +149,35 @@ export class Zona {
     for (const c of this.cruces) this.indexar(this.indiceCruces, c.x - 6, c.y - 6, c.x + 6, c.y + 6, c);
     this.asignarLocales();
     return true;
+  }
+
+  crearEdificio(id, anillo, t) {
+    if (anillo.length < 3) return;
+    let area = 0, cx = 0, cy = 0;
+    for (let i = 0; i < anillo.length; i++) {
+      const [x1, y1] = anillo[i], [x2, y2] = anillo[(i + 1) % anillo.length];
+      const f = x1 * y2 - x2 * y1;
+      area += f; cx += (x1 + x2) * f; cy += (y1 + y2) * f;
+    }
+    area /= 2;
+    if (Math.abs(area) < 4) return;
+    cx /= 6 * area; cy /= 6 * area;
+    const xs = anillo.map((q) => q[0]), ys = anillo.map((q) => q[1]);
+    const edif = {
+      id, anillo, antihorario: area > 0, area: Math.abs(area), cx, cy,
+      minx: Math.min(...xs), maxx: Math.max(...xs), miny: Math.min(...ys), maxy: Math.max(...ys),
+      altura: numero(t.height) ?? (numero(t["building:levels"]) ? numero(t["building:levels"]) * 3.2 + 1 : undefined),
+      emblematico: esEmblematico(t, Math.abs(area)),
+      tags: t, locales: [],
+    };
+    this.edificios.push(edif);
+    this.indexar(this.indiceEdif, edif.minx, edif.miny, edif.maxx, edif.maxy, edif);
+    if (edif.emblematico) this.emblemas.push(this.crearHueco(anillo, edif));
+  }
+
+  crearHueco(anillo, edif = null) {
+    const xs = anillo.map((q) => q[0]), ys = anillo.map((q) => q[1]);
+    return { anillo, edif, minx: Math.min(...xs), maxx: Math.max(...xs), miny: Math.min(...ys), maxy: Math.max(...ys) };
   }
 
   clave(i, j) { return i + "," + j; }
@@ -223,6 +254,52 @@ export class Zona {
     const l = Math.hypot(dx, dy) || 1;
     return e.antihorario ? [dy / l, -dx / l] : [-dy / l, dx / l];
   }
+}
+
+const EDIFICIOS_EMBLEMATICOS = new Set([
+  "cathedral", "church", "chapel", "basilica", "temple", "mosque", "synagogue", "train_station", "stadium",
+  "museum", "castle", "palace", "tower", "bullring", "grandstand", "monastery", "bridge",
+]);
+
+/** ¿Es un monumento? Entonces se conserva el modelo real de Google en vez de generarlo. */
+function esEmblematico(t, area) {
+  if (t.wikidata || t.wikipedia || t.historic || t.heritage) return true;
+  if (EDIFICIOS_EMBLEMATICOS.has(t.building)) return true;
+  if (/attraction|museum|gallery/.test(t.tourism || "")) return true;
+  if (t.amenity === "place_of_worship" || t.amenity === "theatre") return true;
+  if (t.man_made === "tower" || t.man_made === "bridge") return true;
+  return area > 12000; // edificios enormes con formas complejas
+}
+
+/** Cosas emblemáticas que no son "building" en OpenStreetMap (la Plaza de Toros es leisure=stadium). */
+function esMonumentoNoEdificio(t) {
+  return t.man_made === "bridge" || t.leisure === "stadium" || !!t.historic || /attraction|museum/.test(t.tourism || "");
+}
+
+/** Une trozos de vía (de una relación) en anillos cerrados. */
+function unirAnillos(trozos) {
+  const anillos = [];
+  const pendientes = trozos.filter((t) => t.length > 1).map((t) => t.slice());
+  const igual = (a, b) => Math.abs(a[0] - b[0]) < 0.01 && Math.abs(a[1] - b[1]) < 0.01;
+  while (pendientes.length) {
+    let anillo = pendientes.shift();
+    let cambiado = true;
+    while (!igual(anillo[0], anillo[anillo.length - 1]) && cambiado) {
+      cambiado = false;
+      for (let i = 0; i < pendientes.length; i++) {
+        const t = pendientes[i];
+        const fin = anillo[anillo.length - 1];
+        if (igual(t[0], fin)) anillo = anillo.concat(t.slice(1));
+        else if (igual(t[t.length - 1], fin)) anillo = anillo.concat(t.slice(0, -1).reverse());
+        else continue;
+        pendientes.splice(i, 1);
+        cambiado = true;
+        break;
+      }
+    }
+    if (igual(anillo[0], anillo[anillo.length - 1]) && anillo.length > 3) anillos.push(anillo.slice(0, -1));
+  }
+  return anillos;
 }
 
 export const SOLO_COCHE = new Set(["coche"]);

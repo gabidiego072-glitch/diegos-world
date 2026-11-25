@@ -3,16 +3,17 @@
  *
  *  - Lejos: la Valencia real de Google (3D Tiles).
  *  - Cerca del jugador (celdas de 200 × 200 m): calle de videojuego generada con OpenStreetMap.
- *  - Para que no se mezclen, a Google se le "corta" todo lo que está por debajo de ~3,6 m SOLO
- *    dentro de la zona generada: desaparece el suelo derretido y los coches aparcados, pero se
- *    conservan las fachadas altas y los monumentos reales.
+ *  - Modo "completo" (navegadores con WebGL 2): dentro de la zona generada se quita TODA la Valencia
+ *    de Google salvo los monumentos (huecos en el recorte), y los edificios normales se generan enteros
+ *    con su altura real medida en Google: nada se ve derretido y los monumentos siguen siendo los reales.
+ *  - Modo "bajos" (reserva): a Google solo se le quita lo que está por debajo de ~3,6 m y se generan los bajos.
  *
  * Regla del proyecto: no se construye nada a mano; todo sale de datos reales o de reglas.
  */
 import { CIUDAD } from "../config.js";
 import { Proyeccion } from "./proyeccion.js";
 import { AlmacenOsm, descargarOsm } from "./osm.js";
-import { Zona } from "./zona.js";
+import { Zona, puntoEnPoligono } from "./zona.js";
 import { CampoAlturas } from "./alturas.js";
 import { crearTexturas } from "./texturas.js";
 import { construirCelda } from "./construirCelda.js";
@@ -45,7 +46,12 @@ export class GeneradorCiudad {
       const credito = new Cesium.Credit("Calles generadas con datos © colaboradores de OpenStreetMap", true);
       if (this.viewer.creditDisplay.addStaticCredit) this.viewer.creditDisplay.addStaticCredit(credito);
     } catch { /* sin créditos estáticos en esta versión */ }
-    if (this.tileset) {
+    const soportaPoligonos = this.tileset ? Cesium.ClippingPolygonCollection.isSupported(this.scene) : true;
+    this.modo = soportaPoligonos ? "completo" : "bajos";
+    if (this.tileset && this.modo === "completo") {
+      this.recortePol = new Cesium.ClippingPolygonCollection({ polygons: [], enabled: false });
+      this.tileset.clippingPolygons = this.recortePol;
+    } else if (this.tileset) {
       const planos = [
         new Cesium.ClippingPlane(new Cesium.Cartesian3(0, 0, 1), 0),   // por debajo del corte…
         new Cesium.ClippingPlane(new Cesium.Cartesian3(-1, 0, 0), 0),  // …y dentro de la caja
@@ -197,7 +203,8 @@ export class GeneradorCiudad {
     await this.medirSuelo(lim, gen);
     if (gen !== this.generacion) return;
 
-    const glb = await construirCelda(this.zona, lim, (x, y) => this.campo.h(x, y), this.techo, this.texturas);
+    const opciones = { modo: this.modo, techo: this.techo };
+    const glb = await construirCelda(this.zona, lim, (x, y) => this.campo.h(x, y), opciones, this.texturas);
     if (gen !== this.generacion) return;
     if (!glb) { c.estado = "lista"; this.actualizarRecorte(); return; }
 
@@ -243,11 +250,27 @@ export class GeneradorCiudad {
         }
       }
     }
-    // Repartimos como mucho 140 muestras por la celda.
+    // Repartimos como mucho 140 muestras de suelo por la celda.
     let muestras = puntos;
     if (muestras.length > 140) {
       const paso = muestras.length / 140;
       muestras = Array.from({ length: 140 }, (_, k) => puntos[Math.floor(k * paso)]);
+    }
+    const nSuelo = muestras.length;
+    // Y la altura real de cada edificio normal (tejado), para generarlo entero con su altura de verdad.
+    const edificios = [];
+    if (this.modo === "completo") {
+      for (const e of this.zona.edificios) {
+        if (e.emblematico || e.techoMedido !== undefined || !dentro(e.cx, e.cy)) continue;
+        const pts = [[e.cx, e.cy], ...[0, Math.floor(e.anillo.length / 2)].map((i) => [
+          e.cx + (e.anillo[i][0] - e.cx) * 0.4, e.cy + (e.anillo[i][1] - e.cy) * 0.4])];
+        for (const [x, y] of pts) {
+          if (!puntoEnPoligono(x, y, e.anillo)) continue;
+          edificios.push(e);
+          muestras.push([x, y]);
+        }
+        if (muestras.length > 700) break;
+      }
     }
     if (!muestras.length) return;
     const cartos = muestras.map(([x, y]) => {
@@ -258,7 +281,21 @@ export class GeneradorCiudad {
     try {
       const r = await this.scene.sampleHeightMostDetailed(cartos, excluir);
       if (gen !== this.generacion) return;
-      this.campo.anadir(r.map((c, k) => ({ x: muestras[k][0], y: muestras[k][1], h: c && c.height })));
+      this.campo.anadir(r.slice(0, nSuelo).map((c, k) => ({ x: muestras[k][0], y: muestras[k][1], h: c && c.height })));
+      // Altura de cada edificio: mediana de sus muestras que estén claramente por encima del suelo
+      // (si una cae en un patio interior o un árbol, se descarta).
+      const porEdificio = new Map();
+      r.slice(nSuelo).forEach((c, k) => {
+        const e = edificios[k];
+        if (!c || !Number.isFinite(c.height)) return;
+        if (c.height < this.campo.h(e.cx, e.cy) + 3) return;
+        if (!porEdificio.has(e)) porEdificio.set(e, []);
+        porEdificio.get(e).push(c.height);
+      });
+      for (const [e, hs] of porEdificio) {
+        hs.sort((a, b) => a - b);
+        e.techoMedido = hs[Math.floor(hs.length / 2)];
+      }
     } catch (e) {
       console.warn("No se pudo medir el suelo", e);
     }
@@ -271,16 +308,21 @@ export class GeneradorCiudad {
   // ---------------------------------------------------------------- recorte de Google
 
   actualizarRecorte() {
-    if (!this.recorte || !this.proy) return;
+    if (!this.proy || (!this.recorte && !this.recortePol)) return;
     const listas = [...this.celdas.values()].filter((c) => c.estado === "lista");
+    const recorte = this.recortePol || this.recorte;
     if (!listas.length || !this.activo || !this.visible) {
-      this.recorte.enabled = false;
+      recorte.enabled = false;
       return;
     }
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const c of listas) {
       const l = this.limites(c.i, c.j);
       x0 = Math.min(x0, l.x0); y0 = Math.min(y0, l.y0); x1 = Math.max(x1, l.x1); y1 = Math.max(y1, l.y1);
+    }
+    if (this.recortePol) {
+      this.recortarPoligono(x0, y0, x1, y1);
+      return;
     }
     const [, oeste, este, sur, norte] = [0, 1, 2, 3, 4].map((i) => this.recorte.get(i));
     oeste.distance = x0;   // conserva x < x0
@@ -293,6 +335,30 @@ export class GeneradorCiudad {
     const inversa = Cesium.Matrix4.inverse(this.tileset.clippingPlanesOriginMatrix, new Cesium.Matrix4());
     this.recorte.modelMatrix = Cesium.Matrix4.multiply(inversa, enuCorte, new Cesium.Matrix4());
     this.recorte.enabled = true;
+  }
+
+  /** Quita de Google toda la caja generada menos los monumentos (huecos). */
+  recortarPoligono(x0, y0, x1, y1) {
+    const aCart = (x, y) => { const g = this.proy.aGeo(x, y); return Cesium.Cartesian3.fromRadians(g.lon, g.lat, 0); };
+    const huecos = [];
+    const usados = [];
+    for (const h of this.zona && this.zona.emblemas ? this.zona.emblemas : []) {
+      const m = 1.5; // margen alrededor del monumento
+      const b = { minx: h.minx - m, miny: h.miny - m, maxx: h.maxx + m, maxy: h.maxy + m };
+      if (b.minx <= x0 || b.miny <= y0 || b.maxx >= x1 || b.maxy >= y1) continue; // tiene que estar dentro
+      if (usados.some((u) => b.minx < u.maxx && b.maxx > u.minx && b.miny < u.maxy && b.maxy > u.miny)) continue;
+      usados.push(b);
+      // Hueco = el contorno del monumento, un poco ampliado desde su centro.
+      const cx = (h.minx + h.maxx) / 2, cy = (h.miny + h.maxy) / 2;
+      huecos.push(h.anillo.map(([x, y]) => {
+        const dx = x - cx, dy = y - cy, d = Math.hypot(dx, dy) || 1;
+        return aCart(x + (dx / d) * m, y + (dy / d) * m);
+      }));
+    }
+    const caja = [aCart(x0, y0), aCart(x1, y0), aCart(x1, y1), aCart(x0, y1)];
+    this.recortePol.removeAll();
+    this.recortePol.add(new Cesium.ClippingPolygon({ positions: caja, holes: huecos }));
+    this.recortePol.enabled = true;
   }
 
   // ---------------------------------------------------------------- visibilidad
@@ -314,7 +380,10 @@ export class GeneradorCiudad {
   destruir() {
     this.generacion++;
     this.vaciar();
-    if (this.recorte && this.tileset && !this.tileset.isDestroyed()) this.recorte.enabled = false;
+    if (this.tileset && !this.tileset.isDestroyed()) {
+      if (this.recorte) this.recorte.enabled = false;
+      if (this.recortePol) this.recortePol.enabled = false;
+    }
   }
 }
 

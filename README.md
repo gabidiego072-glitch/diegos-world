@@ -43,12 +43,15 @@ de videojuego con los datos reales de **OpenStreetMap**:
 
 1. **Asfalto, líneas, pasos de cebra, bordillos, aceras**, plazas y zonas verdes.
 2. **Árboles, farolas, semáforos y bancos** (los reales del mapa; si no hay datos, se colocan con reglas).
-3. **Bajos de los edificios** con portales, ventanas y **escaparates con el nombre real de cada tienda**
+3. **Edificios enteros, con su altura real** (medida en la Valencia de Google): fachadas con ventanas,
+   balcones y persianas, medianeras, azoteas y, abajo, **escaparates con el nombre real de cada tienda**
    (farmacias, heladerías, cafeterías…).
 4. **Coches y peatones NPC** que circulan por sus carriles y pasean por las aceras.
 
-De la Valencia de Google se oculta solo lo que está por debajo de ~3,6 m en esa zona, así que **los edificios
-altos y los monumentos siguen siendo los reales**. Al moverte, la zona generada te acompaña.
+En esa zona se quita la Valencia “derretida” de Google **menos los monumentos** (Ciudad de las Artes,
+Estación del Norte, Plaza de Toros, iglesias, edificios históricos…), que se quedan con su forma real.
+Al moverte, la zona generada te acompaña. (En navegadores antiguos sin WebGL 2 se usa un modo de reserva:
+solo se generan las plantas bajas.)
 Con el botón **🏙️ Calles** puedes cambiar entre *Generadas* y *Google* (solo Google).
 
 ## 4. Cómo funciona (explicado fácil)

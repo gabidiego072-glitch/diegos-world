@@ -16,6 +16,13 @@ function consulta(s, o, n, e) {
 (
   way["highway"]${b};
   way["building"]${b};
+  relation["building"]${b};
+  way["natural"="water"]${b};
+  way["man_made"="bridge"]${b};
+  way["leisure"="stadium"]${b};
+  relation["leisure"="stadium"]${b};
+  way["historic"]${b};
+  way["tourism"~"attraction|museum"]${b};
   way["leisure"~"park|garden|playground|pitch"]${b};
   way["landuse"~"grass|recreation_ground|village_green"]${b};
   way["area:highway"]${b};
@@ -60,6 +67,7 @@ export class AlmacenOsm {
   constructor() {
     this.vias = new Map();   // id → way (con geometry y nodes)
     this.nodos = new Map();  // id → node
+    this.relaciones = new Map(); // id → relation (con la geometría de sus miembros)
     this.version = 0;
   }
 
@@ -68,6 +76,7 @@ export class AlmacenOsm {
     for (const e of elementos) {
       if (e.type === "way" && e.geometry && !this.vias.has(e.id)) { this.vias.set(e.id, e); nuevos++; }
       else if (e.type === "node" && !this.nodos.has(e.id)) { this.nodos.set(e.id, e); nuevos++; }
+      else if (e.type === "relation" && e.members && !this.relaciones.has(e.id)) { this.relaciones.set(e.id, e); nuevos++; }
     }
     if (nuevos) this.version++;
     return nuevos;

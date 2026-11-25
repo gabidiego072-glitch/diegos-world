@@ -181,17 +181,94 @@ function texturaEscaparate() {
   return c;
 }
 
+/**
+ * Planta de piso (para las plantas altas): una ventana-balcón valenciana con persiana.
+ * Cubre 4 m de ancho × 3,2 m de alto y se repite en horizontal y vertical. Se tiñe con el color de la fachada.
+ */
+function texturaFachada(conBalcon, semilla) {
+  const [c, x] = lienzo(512, 410);
+  const r = aleatorio(semilla);
+  x.fillStyle = "#f4f2ee";
+  x.fillRect(0, 0, 512, 410);
+  ruido(x, 512, 410, 9000, 205, 50, 0.1, semilla + 1, 2);
+  // línea de forjado
+  x.fillStyle = "rgba(0,0,0,0.10)";
+  x.fillRect(0, 396, 512, 14);
+  const vx = 176, vy = 70, vw = 160, vh = conBalcon ? 300 : 220;
+  // moldura
+  x.fillStyle = "rgba(255,255,255,0.55)";
+  x.fillRect(vx - 14, vy - 14, vw + 28, vh + 22);
+  x.fillStyle = "rgba(0,0,0,0.18)";
+  x.fillRect(vx - 14, vy - 14, vw + 28, 6);
+  // cristal con reflejo del cielo
+  const grad = x.createLinearGradient(vx, vy, vx + vw, vy + vh);
+  grad.addColorStop(0, "#5f7c96");
+  grad.addColorStop(0.45, "#2c3e50");
+  grad.addColorStop(1, "#1d2733");
+  x.fillStyle = grad;
+  x.fillRect(vx, vy, vw, vh);
+  x.fillStyle = "rgba(255,255,255,0.14)";
+  x.beginPath(); x.moveTo(vx, vy + vh * 0.7); x.lineTo(vx + vw * 0.6, vy); x.lineTo(vx + vw * 0.85, vy); x.lineTo(vx, vy + vh); x.fill();
+  // carpintería
+  x.strokeStyle = "#e8e4dc";
+  x.lineWidth = 7;
+  x.strokeRect(vx, vy, vw, vh);
+  x.beginPath(); x.moveTo(vx + vw / 2, vy); x.lineTo(vx + vw / 2, vy + vh); x.stroke();
+  // persiana enrollable (típica), bajada a una altura al azar
+  const bajada = vh * (0.15 + r() * 0.5);
+  const colorPersiana = r() < 0.5 ? "#2f5d3a" : "#6b4a2b";
+  x.fillStyle = colorPersiana;
+  x.fillRect(vx - 4, vy - 4, vw + 8, bajada);
+  x.fillStyle = "rgba(0,0,0,0.18)";
+  for (let yy = vy; yy < vy + bajada; yy += 9) x.fillRect(vx - 4, yy, vw + 8, 2);
+  if (conBalcon) {
+    // losa del balcón y barandilla de forja
+    x.fillStyle = "#cfc9bd";
+    x.fillRect(vx - 40, vy + vh - 4, vw + 80, 16);
+    x.strokeStyle = "#1b1b1b";
+    x.lineWidth = 4;
+    x.strokeRect(vx - 36, vy + vh - 96, vw + 72, 92);
+    for (let i = vx - 36; i <= vx + vw + 36; i += 14) { x.beginPath(); x.moveTo(i, vy + vh - 96); x.lineTo(i, vy + vh - 4); x.stroke(); }
+  } else {
+    x.fillStyle = "#d8d2c6";
+    x.fillRect(vx - 10, vy + vh, vw + 20, 12);
+  }
+  return c;
+}
+
+function texturaMedianera() {
+  const [c, x] = lienzo(256);
+  x.fillStyle = "#ebe7e0";
+  x.fillRect(0, 0, 256, 256);
+  ruido(x, 256, 256, 9000, 200, 70, 0.14, 61, 2);
+  return c;
+}
+
+function texturaTejado() {
+  const [c, x] = lienzo(256);
+  x.fillStyle = "#8d8a86";
+  x.fillRect(0, 0, 256, 256);
+  ruido(x, 256, 256, 14000, 140, 80, 0.3, 71, 2);
+  x.strokeStyle = "rgba(0,0,0,0.12)";
+  for (let i = 0; i < 256; i += 64) { x.strokeRect(i, 0, 64, 256); }
+  return c;
+}
+
 /** Texturas fijas compartidas por todas las celdas. */
 export async function crearTexturas() {
-  const [asfalto, acera, adoquin, cesped, pared, escaparate] = await Promise.all([
+  const [asfalto, acera, adoquin, cesped, pared, escaparate, fachadaA, fachadaB, medianera, tejado] = await Promise.all([
     aBytes(texturaAsfalto()),
     aBytes(texturaAcera()),
     aBytes(texturaAdoquin()),
     aBytes(texturaCesped()),
     aBytes(texturaPared()),
     aBytes(texturaEscaparate()),
+    aBytes(texturaFachada(true, 81)),
+    aBytes(texturaFachada(false, 91)),
+    aBytes(texturaMedianera()),
+    aBytes(texturaTejado()),
   ]);
-  return { asfalto, acera, adoquin, cesped, pared, escaparate };
+  return { asfalto, acera, adoquin, cesped, pared, escaparate, fachadaA, fachadaB, medianera, tejado };
 }
 
 // ---------------------------------------------------------------- letreros

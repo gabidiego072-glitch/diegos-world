@@ -373,11 +373,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tecla-tactil.grande { width: 88px; height: 88px; }
 .tecla-tactil.pequena { width: 56px; height: 56px; font-size: 20px; }
 .tecla-tactil.pulsada { background: rgba(255, 122, 26, 0.75); color: #1a0d02; }
-body.tactil-activo .velocimetro { bottom: auto; top: 120px; right: 8px; }
+body.tactil-activo .velocimetro { bottom: auto; top: 64px; right: 8px; min-width: 96px; padding: 8px 12px; }
+body.tactil-activo .vel-numero { font-size: 28px; }
 body.tactil-activo .ayuda { display: none; }
 
 /* ---------------- Móvil ---------------- */
-@media (max-width: 760px) {
+@media (max-width: 760px), (max-height: 500px) {
   .hud-arriba { flex-wrap: wrap; top: 8px; left: 8px; right: 8px; gap: 8px; }
   .marca { display: none; }
   .modo .txt, .modo kbd, .boton-hud .txt { display: none; }

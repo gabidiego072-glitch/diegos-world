@@ -19,11 +19,12 @@ export class CuerpoTerrestre {
    * @param {Cesium.Model} modelo
    * @param {number} correccionRumbo  radianes
    */
-  constructor(fisica, ajustes, modelo, correccionRumbo = 0) {
+  constructor(fisica, ajustes, modelo, correccionRumbo = 0, alturaBase = 0) {
     this.fisica = fisica;
     this.ajustes = ajustes;
     this.modelo = modelo;
     this.correccionRumbo = correccionRumbo;
+    this.alturaBase = alturaBase; // para que las ruedas/pies toquen el suelo
     this.lon = 0;
     this.lat = 0;
     this.altura = 0;
@@ -116,7 +117,8 @@ export class CuerpoTerrestre {
     if (!this.modelo) return;
     // Cesium: "heading" 0 = el modelo mira al este; nuestro rumbo 0 = norte.
     const hpr = new Cesium.HeadingPitchRoll(this.rumbo - Math.PI / 2 + this.correccionRumbo, this.inclinacion, 0);
-    Cesium.Transforms.headingPitchRollToFixedFrame(this.posicion(), hpr, Cesium.Ellipsoid.WGS84, undefined, this.matriz);
+    const pos = Cesium.Cartesian3.fromRadians(this.lon, this.lat, this.altura + this.alturaBase);
+    Cesium.Transforms.headingPitchRollToFixedFrame(pos, hpr, Cesium.Ellipsoid.WGS84, undefined, this.matriz);
     this.modelo.modelMatrix = this.matriz;
   }
 }

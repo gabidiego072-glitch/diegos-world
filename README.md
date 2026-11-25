@@ -30,7 +30,7 @@ Un **token de Cesium ion**. Es como una “llave” gratuita para descargar la V
 | 🚶 **A pie** (tecla `2`) | `W` `S` andar · `A` `D` girar · `Shift` correr · `F` subir/bajar del coche |
 | 🕊️ **Vuelo libre** (tecla `3`) | Ratón para moverte (como Google Earth) · **doble clic en una calle** para aparecer allí · en móvil: botón **“Aparecer aquí”** |
 
-- Arrastra con el ratón para mirar alrededor del coche o del personaje; la rueda acerca o aleja la cámara.
+- Arrastra con el ratón para mirar alrededor (izquierda/derecha) y **arriba/abajo**; la rueda acerca o aleja la cámara.
 - `T` abre el panel de **Lugares** (teletransporte): Calle de Xàtiva (Plaza de Toros y Estación del Norte), Plaza del Ayuntamiento, Mercado Central, Torres de Serranos y Ciudad de las Artes y las Ciencias.
 - **Calidad Baja/Alta** (arriba a la derecha). Empieza en *Baja*, pensada para ordenadores flojos. Sin sombras.
 - En el **móvil** funciona el modo de vuelo con los dedos (arrastrar, pellizcar) y el botón “Aparecer aquí”.
@@ -83,5 +83,6 @@ CLAUDE.md            Visión completa del proyecto y reglas de desarrollo
 
 - Ciudad 3D: **Google Photorealistic 3D Tiles** vía **Cesium ion** (los créditos de Google se muestran siempre en pantalla, como exige su licencia).
 - Motor: **CesiumJS** (Apache 2.0).
+- Coche: “Car Concept” © The Khronos Group, CC-BY 4.0.
 - Personaje: “Cesium Man” © Cesium, CC-BY 4.0.
 - Idea original: **Diego**.

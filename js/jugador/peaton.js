@@ -5,8 +5,8 @@ import { PEATON } from "../config.js";
 import { CuerpoTerrestre } from "./cuerpoTerrestre.js";
 
 export class Peaton extends CuerpoTerrestre {
-  constructor(fisica, modelo, correccionRumbo) {
-    super(fisica, PEATON, modelo, correccionRumbo);
+  constructor(fisica, modelo, correccionRumbo, alturaBase) {
+    super(fisica, PEATON, modelo, correccionRumbo, alturaBase);
     this.fase = 0;          // fase de la animación de caminar
     this.corriendo = false;
     this.prepararAnimacion();

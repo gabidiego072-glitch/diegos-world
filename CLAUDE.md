@@ -67,7 +67,8 @@ js/camara/              Cámara en tercera persona con anti-paredes.
 js/interfaz/            Pantalla de inicio (token) y HUD.
 js/lugares/lugares.js   Puntos de teletransporte (datos puros, verificados con OpenStreetMap).
 js/modos/juego.js       Orquesta modos, teletransporte y bucle principal.
-assets/modelos/         coche.glb (generado por herramientas/generar_coche.py) y peaton.glb (Cesium Man, CC-BY 4.0).
+assets/modelos/         coche_realista.glb (Car Concept, Khronos, CC-BY 4.0), peaton.glb (Cesium Man, CC-BY 4.0)
+                        y coche.glb de reserva (generado por herramientas/generar_coche.py).
 pruebas/fisica.html     Escenario sin Google para probar la física (suelo, pared, bordillo, escalón, toldo).
 ```
 
@@ -89,6 +90,13 @@ pruebas/fisica.html     Escenario sin Google para probar la física (suelo, pare
 
 - Google Photorealistic 3D Tiles: **mostrar siempre los créditos y el logo de Google** (no tapar la esquina inferior izquierda), no usar otro buscador que no sea el de Google, no mezclar con otro globo/terreno.
 - Cesium Man: CC-BY 4.0, © Cesium. Ver `assets/modelos/CREDITOS.md`.
+
+## Limitación conocida: calidad a pie de calle
+
+Las Google 3D Tiles se hacen con fotos aéreas: desde el aire se ven genial, pero a ras de suelo se ven "derretidas"
+(coches aparcados como manchas, pasos de cebra borrosos). Ninguna opción de calidad lo arregla. La solución prevista
+encaja con la regla de oro: **modo híbrido** — cerca del jugador, generar automáticamente geometría limpia de juego a partir
+de OpenStreetMap (asfalto, marcas viales, aceras, fachadas) y dejar las 3D Tiles de Google para la distancia y el contexto.
 
 ## Siguientes pasos sugeridos
 

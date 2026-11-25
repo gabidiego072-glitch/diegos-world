@@ -7,8 +7,8 @@ import { CuerpoTerrestre } from "./cuerpoTerrestre.js";
 const KMH = 1 / 3.6;
 
 export class Coche extends CuerpoTerrestre {
-  constructor(fisica, modelo, correccionRumbo) {
-    super(fisica, COCHE, modelo, correccionRumbo);
+  constructor(fisica, modelo, correccionRumbo, alturaBase) {
+    super(fisica, COCHE, modelo, correccionRumbo, alturaBase);
     this.turbo = false;
   }
 

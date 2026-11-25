@@ -18,7 +18,7 @@ export const CLAVE_MODO = "diegosworld.ultimoModoTerrestre";
  */
 export const CALIDADES = {
   baja: { nombre: "Baja", errorPantalla: 32, escalaResolucion: 0.65, msaa: 1, fxaa: false, cacheMB: 256 },
-  alta: { nombre: "Alta", errorPantalla: 10, escalaResolucion: 1.0, msaa: 4, fxaa: true, cacheMB: 768 },
+  alta: { nombre: "Alta", errorPantalla: 6, escalaResolucion: 1.0, msaa: 4, fxaa: true, cacheMB: 768 },
 };
 export const CALIDAD_POR_DEFECTO = "baja"; // pensado para PCs flojos
 
@@ -55,13 +55,16 @@ export const PEATON = {
 
 /** Cámara en tercera persona. */
 export const CAMARA = {
-  coche: { distancia: 9.5, altura: 3.4, alturaMirada: 1.3 },
-  pie:   { distancia: 4.2, altura: 1.6, alturaMirada: 1.5 },
+  // distancia: metros detrás · altura: metros por encima del punto de mirada
+  // alturaMirada: a qué altura del jugador se mira · adelanto: cuántos metros por delante se apunta
+  coche: { distancia: 7.5, altura: 1.9, alturaMirada: 1.3, adelanto: 9 },
+  pie:   { distancia: 4.3, altura: 0.7, alturaMirada: 1.6, adelanto: 5 },
 };
 
 /** Modelos 3D. Los modelos glTF miran hacia +Z; Cesium los gira para que miren al "este".
  *  Si algún día un modelo sale mirando de lado, ajusta su corrección (en grados). */
 export const MODELOS = {
-  coche: { url: new URL("../assets/modelos/coche.glb", import.meta.url).href, correccionRumbo: 0, escala: 1 },
-  peaton: { url: new URL("../assets/modelos/peaton.glb", import.meta.url).href, correccionRumbo: 0, escala: 1 },
+  // alturaBase: cuánto hay que subir el modelo para que las ruedas toquen el suelo.
+  coche: { url: new URL("../assets/modelos/coche_realista.glb", import.meta.url).href, correccionRumbo: 0, escala: 1, alturaBase: 0.49 },
+  peaton: { url: new URL("../assets/modelos/peaton.glb", import.meta.url).href, correccionRumbo: 0, escala: 1, alturaBase: 0 },
 };

@@ -45,8 +45,8 @@ export class Juego {
       cargarModelo(this.scene, MODELOS.coche),
       cargarModelo(this.scene, MODELOS.peaton),
     ]);
-    this.coche = new Coche(this.fisica, modeloCoche, radianes(MODELOS.coche.correccionRumbo));
-    this.peaton = new Peaton(this.fisica, modeloPeaton, radianes(MODELOS.peaton.correccionRumbo));
+    this.coche = new Coche(this.fisica, modeloCoche, radianes(MODELOS.coche.correccionRumbo), MODELOS.coche.alturaBase);
+    this.peaton = new Peaton(this.fisica, modeloPeaton, radianes(MODELOS.peaton.correccionRumbo), MODELOS.peaton.alturaBase);
     this.coche.visible = false;
     this.peaton.visible = false;
 

@@ -26,7 +26,7 @@ function consulta(s, o, n, e) {
   way["leisure"~"park|garden|playground|pitch"]${b};
   way["landuse"~"grass|recreation_ground|village_green"]${b};
   way["area:highway"]${b};
-  node["highway"~"traffic_signals|crossing|street_lamp"]${b};
+  node["highway"~"traffic_signals|crossing|street_lamp|bus_stop"]${b};
   node["natural"="tree"]${b};
   node["amenity"]${b};
   node["shop"]${b};

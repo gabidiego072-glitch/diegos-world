@@ -58,6 +58,7 @@ export class Zona {
     this.bancos = [];
     this.locales = [];
     this.aguas = [];
+    this.paradas = [];
     this.emblemas = [];   // huecos donde se conserva la Valencia de Google (monumentos, puentes)
     this.indiceSeg = new Map();
     this.indiceEdif = new Map();
@@ -141,6 +142,7 @@ export class Zona {
       else if (t.highway === "traffic_signals") this.semaforos.push({ x, y, id: n.id });
       else if (t.highway === "crossing" && t.crossing !== "unmarked" && t.crossing !== "no" && t.crossing_ref !== "none") this.cruces.push({ x, y, id: n.id });
       else if (t.amenity === "bench") this.bancos.push({ x, y, id: n.id });
+      else if (t.highway === "bus_stop") this.paradas.push({ x, y, id: n.id, nombre: t.name });
       if ((t.shop && t.shop !== "vacant") || AMENIDADES_LOCAL.has(t.amenity) || t.tourism === "hotel" || t.tourism === "hostel") {
         this.locales.push({ x, y, tags: t, nombre: t["name:es"] || t.name || t.brand, id: n.id });
       }
@@ -208,6 +210,17 @@ export class Zona {
       if (distanciaSegmento(x, y, s.a, s.b) < s.hw - margen) return true;
     }
     return false;
+  }
+
+  /** Segmento de calzada más cercano a un punto (para orientar mobiliario). */
+  segmentoCercano(x, y, maxDist = 25) {
+    let mejor = null;
+    for (const sg of this.cercanos(this.indiceSeg, x, y)) {
+      if (sg.calle.clase !== "coche") continue;
+      const d = distanciaSegmento(x, y, sg.a, sg.b);
+      if (d < maxDist && (!mejor || d < mejor.d)) mejor = { ...sg, d };
+    }
+    return mejor;
   }
 
   /** ¿Hay un paso de cebra a menos de `r` metros? */

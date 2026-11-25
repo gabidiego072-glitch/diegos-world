@@ -58,6 +58,10 @@ export class Hud {
     $("estado-pie").hidden = modo !== "pie";
     $("boton-aparecer").hidden = modo !== "vuelo";
     $("ayuda").innerHTML = AYUDAS[modo] || "";
+    // Controles táctiles en pantallas táctiles (en coche y a pie).
+    const tactil = window.matchMedia("(pointer: coarse)").matches;
+    if ($("tactil")) $("tactil").hidden = !(tactil && modo !== "vuelo");
+    document.body.classList.toggle("tactil-activo", tactil && modo !== "vuelo");
   }
 
   ponerCiudad(activa) {

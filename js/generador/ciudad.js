@@ -41,7 +41,16 @@ export class GeneradorCiudad {
   }
 
   async preparar() {
-    this.texturas = await crearTexturas();
+    // Las texturas comunes se publican como URLs: así todas las celdas comparten la misma copia
+    // en la tarjeta gráfica (importante en ordenadores modestos).
+    const texturas = await crearTexturas();
+    this.texturas = {};
+    this.urlsTexturas = [];
+    for (const [nombre, t] of Object.entries(texturas)) {
+      const uri = URL.createObjectURL(new Blob([t.bytes], { type: t.mime }));
+      this.urlsTexturas.push(uri);
+      this.texturas[nombre] = { uri };
+    }
     try {
       const credito = new Cesium.Credit("Calles generadas con datos © colaboradores de OpenStreetMap", true);
       if (this.viewer.creditDisplay.addStaticCredit) this.viewer.creditDisplay.addStaticCredit(credito);
@@ -208,6 +217,7 @@ export class GeneradorCiudad {
     if (gen !== this.generacion) return;
     if (!glb) { c.estado = "lista"; this.actualizarRecorte(); return; }
 
+    c.tamano = glb.length; // bytes (para depurar)
     c.url = URL.createObjectURL(new Blob([glb], { type: "model/gltf-binary" }));
     const modelo = await Cesium.Model.fromGltfAsync({
       url: c.url,
@@ -250,11 +260,12 @@ export class GeneradorCiudad {
         }
       }
     }
-    // Repartimos como mucho 140 muestras de suelo por la celda.
+    // Repartimos como mucho 90 muestras de suelo por la celda (cada muestra obliga a Google a cargar
+    // su máximo detalle en ese punto: más muestras = más descarga).
     let muestras = puntos;
-    if (muestras.length > 140) {
-      const paso = muestras.length / 140;
-      muestras = Array.from({ length: 140 }, (_, k) => puntos[Math.floor(k * paso)]);
+    if (muestras.length > 90) {
+      const paso = muestras.length / 90;
+      muestras = Array.from({ length: 90 }, (_, k) => puntos[Math.floor(k * paso)]);
     }
     const nSuelo = muestras.length;
     // Y la altura real de cada edificio normal (tejado), para generarlo entero con su altura de verdad.
@@ -262,14 +273,15 @@ export class GeneradorCiudad {
     if (this.modo === "completo") {
       for (const e of this.zona.edificios) {
         if (e.emblematico || e.techoMedido !== undefined || !dentro(e.cx, e.cy)) continue;
-        const pts = [[e.cx, e.cy], ...[0, Math.floor(e.anillo.length / 2)].map((i) => [
-          e.cx + (e.anillo[i][0] - e.cx) * 0.4, e.cy + (e.anillo[i][1] - e.cy) * 0.4])];
+        // Un punto por edificio (dos si es grande), bien dentro de su planta.
+        const pts = [[e.cx, e.cy]];
+        if (e.area > 400) pts.push([e.cx + (e.anillo[0][0] - e.cx) * 0.4, e.cy + (e.anillo[0][1] - e.cy) * 0.4]);
         for (const [x, y] of pts) {
           if (!puntoEnPoligono(x, y, e.anillo)) continue;
           edificios.push(e);
           muestras.push([x, y]);
         }
-        if (muestras.length > 700) break;
+        if (muestras.length > 380) break;
       }
     }
     if (!muestras.length) return;

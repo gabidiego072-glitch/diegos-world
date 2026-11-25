@@ -33,7 +33,8 @@ Un **token de Cesium ion**. Es como una “llave” gratuita para descargar la V
 - Arrastra con el ratón para mirar alrededor (izquierda/derecha) y **arriba/abajo**; la rueda acerca o aleja la cámara.
 - `T` abre el panel de **Lugares** (teletransporte): Calle de Xàtiva (Plaza de Toros y Estación del Norte), Plaza del Ayuntamiento, Mercado Central, Torres de Serranos y Ciudad de las Artes y las Ciencias.
 - **Calidad Baja/Alta** (arriba a la derecha). Empieza en *Baja*, pensada para ordenadores flojos. Sin sombras.
-- En el **móvil** funciona el modo de vuelo con los dedos (arrastrar, pellizcar) y el botón “Aparecer aquí”.
+- En el **móvil** hay **botones en pantalla** para conducir y andar (◀ ▶ girar, ▲ acelerar, ▼ frenar, ⚡ turbo).
+  En vuelo: arrastrar y pellizcar, y el botón “Aparecer aquí”.
 
 ## 3. Modo híbrido: calles generadas (botón 🏙️ “Calles”)
 

@@ -300,6 +300,11 @@ function mobiliario(g, zona, dentro, H) {
       if (!sitioValido(x, y) || !libre(x, y, 1.5)) return;
       ocupados.push([x, y]);
       farola(g, x, y, H(x, y), haciaCalle[0], haciaCalle[1]);
+      // Papelera junto a algunas farolas.
+      if (hash(Math.round(x * 3) * 7919 + Math.round(y * 3)) < 0.35) {
+        const px = x - haciaCalle[1] * 0.9, py = y + haciaCalle[0] * 0.9;
+        g.cilindro("contenedor", px, py, H(px, py) - 0.05, 0.22, 0.85, [0.7, 0.7, 0.7], 8);
+      }
     }, true);
   }
 
@@ -318,6 +323,39 @@ function mobiliario(g, zona, dentro, H) {
       const x = s.x - dx * 2 + rx * (hw + 0.4), y = s.y - dy * 2 + ry * (hw + 0.4);
       semaforo(g, x, y, H(x, y), dx, dy);
       ocupados.push([x, y]);
+    }
+  }
+
+  // Paradas de autobús reales (marquesina junto al bordillo).
+  for (const pa of zona.paradas) {
+    if (!dentro(pa.x, pa.y)) continue;
+    const sg = zona.segmentoCercano(pa.x, pa.y);
+    if (!sg) continue;
+    const dx = sg.b[0] - sg.a[0], dy = sg.b[1] - sg.a[1], L = Math.hypot(dx, dy) || 1;
+    const ux = dx / L, uy = dy / L;
+    // ¿A qué lado de la calle está la parada?
+    const lado = Math.sign((pa.x - sg.a[0]) * -uy + (pa.y - sg.a[1]) * ux) || 1;
+    const nx = -uy * lado, ny = ux * lado; // hacia la acera
+    const t = Math.max(0, Math.min(L, (pa.x - sg.a[0]) * ux + (pa.y - sg.a[1]) * uy));
+    const x = sg.a[0] + ux * t + nx * (sg.hw + 1.6), y = sg.a[1] + uy * t + ny * (sg.hw + 1.6);
+    if (zona.edificioEn(x, y)) continue;
+    marquesina(g, x, y, H(x, y), Math.atan2(uy, ux), nx, ny);
+    ocupados.push([x, y]);
+  }
+
+  // Bolardos a los lados de los pasos de cebra.
+  for (const c of zona.cruces) {
+    if (!dentro(c.x, c.y)) continue;
+    const en = (zona.nodoACalles.get(c.id) || []).find((e) => e.calle.clase === "coche");
+    if (!en) continue;
+    const [ux, uy] = direccionEnNodo(en.calle, en.i);
+    const nx = -uy, ny = ux;
+    for (const lado of [-1, 1]) {
+      for (const k of [-1, 1]) {
+        const x = c.x + nx * (en.calle.hw + 0.45) * lado + ux * 2.2 * k;
+        const y = c.y + ny * (en.calle.hw + 0.45) * lado + uy * 2.2 * k;
+        if (!zona.dentroDeCalzada(x, y, null, -0.3) && !zona.edificioEn(x, y)) g.cilindro("metal", x, y, H(x, y) - 0.05, 0.08, 0.95, BLANCO, 6);
+      }
     }
   }
 
@@ -383,6 +421,17 @@ function semaforo(g, x, y, z, dx, dy) {
   g.caja("luzVerde", x + fx, y + fy, z + 2.5, 0.17, 0.05, 0.17, ang);
 }
 
+function marquesina(g, x, y, z, ang, nx, ny) {
+  const c = Math.cos(ang), s = Math.sin(ang);
+  // Cristal trasero (lado de la acera) y techo
+  g.caja("cristalCoche", x + nx * 0.7, y + ny * 0.7, z, 3.6, 0.06, 2.3, ang);
+  g.caja("metal", x + nx * 0.2, y + ny * 0.2, z + 2.3, 3.9, 1.7, 0.12, ang);
+  for (const k of [-1.75, 1.75]) g.cilindro("metal", x + nx * 0.7 + c * k, y + ny * 0.7 + s * k, z, 0.05, 2.35, BLANCO, 6);
+  // Panel publicitario en un extremo
+  g.caja("farol", x + c * 1.85 + nx * 0.2, y + s * 1.85 + ny * 0.2, z + 0.2, 0.08, 1.2, 1.8, ang, [0.6, 0.75, 0.9]);
+  banco(g, x + nx * 0.35, y + ny * 0.35, z, ang);
+}
+
 function banco(g, x, y, z, ang) {
   g.caja("madera", x, y, z + 0.42, 1.6, 0.42, 0.06, ang);
   const bx = -Math.sin(ang) * 0.2, by = Math.cos(ang) * 0.2;
@@ -420,6 +469,9 @@ function trastosAzotea(g, e, z) {
 
 function fachadas(g, zona, dentro, H, opciones) {
   const completo = opciones.modo === "completo";
+  // Altura típica del barrio (para edificios sin medida ni datos): mediana de los ya medidos.
+  const medidas = zona.edificios.filter((e) => e.techoMedido !== undefined).map((e) => e.techoMedido - H(e.cx, e.cy)).sort((a, b) => a - b);
+  const alturaTipica = medidas.length >= 5 ? medidas[Math.floor(medidas.length / 2)] : 15;
   const letreros = [];
   const pendientes = []; // letreros a colocar cuando tengamos el atlas
   for (const e of zona.edificios) {
@@ -429,7 +481,7 @@ function fachadas(g, zona, dentro, H, opciones) {
     const base = Math.min(...A.map((p) => H(p[0], p[1]))) - 0.3;
     let arriba;
     if (completo) {
-      const alto = e.techoMedido !== undefined ? e.techoMedido - (base + 0.3) : e.altura ?? 15;
+      const alto = e.techoMedido !== undefined ? e.techoMedido - (base + 0.3) : e.altura ?? alturaTipica;
       arriba = base + 0.3 + Math.max(3, Math.min(alto, 120));
     } else {
       arriba = e.altura !== undefined && e.altura < 4.2 ? base + 0.3 + e.altura : opciones.techo;

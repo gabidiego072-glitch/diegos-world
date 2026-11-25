@@ -24,6 +24,24 @@ export class Entrada {
 
   onTecla(f) { this.alPulsar.push(f); }
 
+  /** Botones en pantalla (móvil): cada botón con data-tecla="KeyW"... actúa como esa tecla. */
+  enlazarTactil(contenedor) {
+    for (const b of contenedor.querySelectorAll("[data-tecla]")) {
+      const codigo = b.dataset.tecla;
+      const soltar = () => { this.pulsadas.delete(codigo); b.classList.remove("pulsada"); };
+      b.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        b.setPointerCapture?.(e.pointerId);
+        this.pulsadas.add(codigo);
+        b.classList.add("pulsada");
+      });
+      b.addEventListener("pointerup", soltar);
+      b.addEventListener("pointercancel", soltar);
+      b.addEventListener("lostpointercapture", soltar);
+      b.addEventListener("contextmenu", (e) => e.preventDefault());
+    }
+  }
+
   /** Estado actual de los controles. giro: -1 izquierda, +1 derecha. */
   leer() {
     const p = this.pulsadas;

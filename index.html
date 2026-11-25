@@ -104,6 +104,19 @@
 
     <button id="boton-aparecer" class="boton-principal flotante" hidden>⬇ Aparecer aquí</button>
 
+    <!-- Controles táctiles (solo en móvil/tablet, en coche y a pie) -->
+    <div id="tactil" class="tactil" hidden>
+      <div class="tactil-izq">
+        <button class="tecla-tactil" data-tecla="KeyA" aria-label="Girar a la izquierda">◀</button>
+        <button class="tecla-tactil" data-tecla="KeyD" aria-label="Girar a la derecha">▶</button>
+      </div>
+      <div class="tactil-der">
+        <button class="tecla-tactil pequena" data-tecla="ShiftLeft" aria-label="Turbo / correr">⚡</button>
+        <button class="tecla-tactil" data-tecla="KeyS" aria-label="Frenar / atrás">▼</button>
+        <button class="tecla-tactil grande" data-tecla="KeyW" aria-label="Acelerar / andar">▲</button>
+      </div>
+    </div>
+
     <div id="ayuda" class="ayuda"></div>
     <div id="aviso" class="aviso" role="status" aria-live="polite"></div>
   </div>

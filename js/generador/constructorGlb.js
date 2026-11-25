@@ -229,7 +229,7 @@ export class ConstructorGlb {
 
   /**
    * Genera el archivo GLB.
-   * @param {Object<string, {bytes: Uint8Array, mime: string}>} imagenes  texturas por nombre
+   * @param {Object<string, {bytes?: Uint8Array, mime?: string, uri?: string}>} imagenes  texturas por nombre
    */
   glb(imagenes = {}) {
     const json = {
@@ -268,7 +268,10 @@ export class ConstructorGlb {
       if (!img) return undefined;
       let indiceImagen = json.images.findIndex((i) => i.name === nombre);
       if (indiceImagen < 0) {
-        json.images.push({ name: nombre, mimeType: img.mime, bufferView: anadirVista(img.bytes) });
+        // Imagen compartida por URL (Cesium la carga una vez y la reutiliza en todos los modelos)
+        // o incrustada dentro del GLB.
+        if (img.uri) json.images.push({ name: nombre, uri: img.uri });
+        else json.images.push({ name: nombre, mimeType: img.mime, bufferView: anadirVista(img.bytes) });
         indiceImagen = json.images.length - 1;
       }
       json.textures.push({ source: indiceImagen, sampler: ajustarV ? 1 : 0 });

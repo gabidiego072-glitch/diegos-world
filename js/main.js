@@ -10,6 +10,7 @@ import { mostrarInicio } from "./interfaz/inicio.js";
 import { carga } from "./interfaz/hud.js";
 
 const entrada = new Entrada();
+if (document.getElementById("tactil")) entrada.enlazarTactil(document.getElementById("tactil"));
 let mundo = null;
 let juego = null;
 

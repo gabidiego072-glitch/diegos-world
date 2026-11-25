@@ -2,7 +2,7 @@
   "version": 0.6,
   "generator": "Overpass API 0.7.62.4 2390de5a",
   "osm3s": {
-    "timestamp_osm_base": "2026-11-25T17:54:39Z",
+    "timestamp_osm_base": "2026-11-25T18:08:51Z",
     "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
   },
   "elements": [
@@ -38,6 +38,220 @@
   "tags": {
     "crossing": "traffic_signals",
     "highway": "crossing"
+  }
+},
+{
+  "type": "node",
+  "id": 246089598,
+  "lat": 39.4684916,
+  "lon": -0.3739322,
+  "tags": {
+    "bench": "no",
+    "bin": "no",
+    "bus": "yes",
+    "highway": "bus_stop",
+    "kerb": "raised",
+    "kerb:approach_aid": "no",
+    "lit": "yes",
+    "name": "Pascual i Genís - Roger de Llòria",
+    "network": "EMT",
+    "operator": "Empresa Municipal de Transportes de Valencia",
+    "passenger_information_display": "yes",
+    "passenger_information_display:speech_output": "no",
+    "public_transport": "platform",
+    "ref": "2317",
+    "shelter": "no",
+    "source": "www.emtvalencia.es",
+    "tactile_paving": "yes",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 246089631,
+  "lat": 39.4675077,
+  "lon": -0.3764674,
+  "tags": {
+    "bus": "yes",
+    "highway": "bus_stop",
+    "name": "Xàtiva - Estació del Nord",
+    "network": "EMT",
+    "network:wikidata": "Q11007711",
+    "old_name": "Xàtiva - Estació del Nord",
+    "old_name:es": "Játiva - Estación del Norte",
+    "operator": "Empresa Municipal de Transportes de Valencia",
+    "public_transport": "platform",
+    "ref": "2261",
+    "shelter": "yes",
+    "source": "www.emtvalencia.es"
+  }
+},
+{
+  "type": "node",
+  "id": 246089687,
+  "lat": 39.4685411,
+  "lon": -0.3782104,
+  "tags": {
+    "bench": "yes",
+    "bin": "yes",
+    "bus": "yes",
+    "highway": "bus_stop",
+    "lit": "no",
+    "name": "Estació del Nord - Sant Pau",
+    "network": "EMT",
+    "network:wikidata": "Q11007711",
+    "old_name": "Sant Pau - Institut",
+    "operator": "Empresa Municipal de Transportes de Valencia",
+    "public_transport": "platform",
+    "ref": "2312",
+    "shelter": "yes",
+    "source": "www.emtvalencia.es",
+    "tactile_paving": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 246089688,
+  "lat": 39.4662101,
+  "lon": -0.3767607,
+  "tags": {
+    "bench": "yes",
+    "bin": "yes",
+    "bus": "yes",
+    "highway": "bus_stop",
+    "lit": "yes",
+    "name": "Estació del Nord - Castelló",
+    "network": "EMT",
+    "old_name": "Castelló - Estació Nord",
+    "old_name:es": "Castellón - Estación del Norte",
+    "operator": "Empresa Municipal de Transportes de Valencia",
+    "public_transport": "platform",
+    "ref": "1858",
+    "shelter": "yes",
+    "source": "www.emtvalencia.es",
+    "tactile_paving": "yes",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 246089696,
+  "lat": 39.4658763,
+  "lon": -0.3742646,
+  "tags": {
+    "bench": "no",
+    "bin": "no",
+    "bus": "yes",
+    "highway": "bus_stop",
+    "lit": "yes",
+    "name": "Russafa - Ciril Amorós",
+    "network": "EMT",
+    "network:wikidata": "Q11007711",
+    "operator": "Empresa Municipal de Transportes de Valencia",
+    "public_transport": "platform",
+    "ref": "830",
+    "shelter": "yes",
+    "source": "www.emtvalencia.es",
+    "tactile_paving": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 246089703,
+  "lat": 39.4688234,
+  "lon": -0.3767852,
+  "tags": {
+    "bus": "yes",
+    "highway": "bus_stop",
+    "name": "Marqués de Sotelo - Plaça de l'Ajuntament",
+    "network": "EMT",
+    "network:wikidata": "Q11007711",
+    "old_name": "Marqués de Sotelo - Pl. de l'Ajuntament",
+    "operator": "Empresa Municipal de Transportes de Valencia",
+    "public_transport": "platform",
+    "ref": "2279",
+    "shelter": "yes",
+    "source": "www.emtvalencia.es"
+  }
+},
+{
+  "type": "node",
+  "id": 246089908,
+  "lat": 39.4672493,
+  "lon": -0.3777139,
+  "tags": {
+    "bench": "no",
+    "bus": "yes",
+    "check_date:bench": "2024-10-12",
+    "highway": "bus_stop",
+    "name": "Estació del Nord - Bailén",
+    "network": "EMT",
+    "operator": "Empresa Municipal de Transportes de Valencia",
+    "public_transport": "platform",
+    "ref": "2309",
+    "shelter": "no",
+    "source": "www.emtvalencia.es"
+  }
+},
+{
+  "type": "node",
+  "id": 246090211,
+  "lat": 39.4685797,
+  "lon": -0.3794379,
+  "tags": {
+    "bus": "yes",
+    "highway": "bus_stop",
+    "name": "Estació del Nord - Sant Agustí",
+    "network": "EMT",
+    "network:wikidata": "Q11007711",
+    "old_name": "Sant Agustí - Xátiva",
+    "operator": "Empresa Municipal de Transportes de Valencia",
+    "public_transport": "platform",
+    "ref": "2285",
+    "source": "www.emtvalencia.es"
+  }
+},
+{
+  "type": "node",
+  "id": 246090220,
+  "lat": 39.4679461,
+  "lon": -0.3784071,
+  "tags": {
+    "bench": "yes",
+    "bus": "yes",
+    "highway": "bus_stop",
+    "name": "Xàtiva - Institut Lluís Vives",
+    "network": "EMT",
+    "network:wikidata": "Q11007711",
+    "old_name": "Xàtiva - Marqués de Sotelo",
+    "operator": "Empresa Municipal de Transportes de Valencia",
+    "public_transport": "platform",
+    "ref": "2277",
+    "shelter": "yes",
+    "source": "www.emtvalencia.es"
+  }
+},
+{
+  "type": "node",
+  "id": 246090327,
+  "lat": 39.4682001,
+  "lon": -0.3768649,
+  "tags": {
+    "bench": "yes",
+    "bin": "no",
+    "bus": "yes",
+    "highway": "bus_stop",
+    "lit": "yes",
+    "name": "Estació del Nord - Marqués de Sotelo",
+    "network": "EMT",
+    "network:wikidata": "Q11007711",
+    "old_name": "Marqués de Sotelo - Xàtiva",
+    "operator": "Empresa Municipal de Transportes de Valencia",
+    "public_transport": "platform",
+    "ref": "2278",
+    "shelter": "yes",
+    "source": "www.emtvalencia.es",
+    "tactile_paving": "yes"
   }
 },
 {
@@ -3337,6 +3551,28 @@
 },
 {
   "type": "node",
+  "id": 7532223746,
+  "lat": 39.4661320,
+  "lon": -0.3769992,
+  "tags": {
+    "bench": "yes",
+    "bin": "yes",
+    "bus": "yes",
+    "highway": "bus_stop",
+    "name": "Alacant - Castelló",
+    "network": "EMT",
+    "network:wikidata": "Q11007711",
+    "operator": "Empresa Municipal de Transportes de Valencia",
+    "public_transport": "platform",
+    "ref": "2330",
+    "shelter": "yes",
+    "source": "www.emtvalencia.es",
+    "tactile_paving": "yes",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
   "id": 7596340251,
   "lat": 39.4673237,
   "lon": -0.3743497,
@@ -6220,6 +6456,26 @@
 },
 {
   "type": "node",
+  "id": 11973614738,
+  "lat": 39.4679981,
+  "lon": -0.3783551,
+  "tags": {
+    "bench": "no",
+    "bus": "yes",
+    "highway": "bus_stop",
+    "name": "Xàtiva - Institut Lluís Vives",
+    "network": "EMT",
+    "network:wikidata": "Q11007711",
+    "old_name": "Xàtiva - Marqués de Sotelo",
+    "operator": "Empresa Municipal de Transportes de Valencia",
+    "public_transport": "platform",
+    "ref": "2277",
+    "shelter": "yes",
+    "source": "www.emtvalencia.es"
+  }
+},
+{
+  "type": "node",
   "id": 12039878638,
   "lat": 39.4655580,
   "lon": -0.3786292,
@@ -6859,6 +7115,90 @@
     "highway": "crossing",
     "kerb": "flush",
     "tactile_paving": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 246089551,
+  "lat": 39.4652377,
+  "lon": -0.3735289,
+  "tags": {
+    "bench": "yes",
+    "bin": "no",
+    "bus": "yes",
+    "check_date:shelter": "2023-01-06",
+    "highway": "bus_stop",
+    "lit": "yes",
+    "name": "Marqués del Túria - Russafa",
+    "network": "EMT",
+    "operator": "Empresa Municipal de Transportes de Valencia",
+    "public_transport": "platform",
+    "ref": "689",
+    "shelter": "yes",
+    "tactile_paving": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 246089589,
+  "lat": 39.4648385,
+  "lon": -0.3725517,
+  "tags": {
+    "bench": "no",
+    "bin": "yes",
+    "bus": "yes",
+    "highway": "bus_stop",
+    "lit": "yes",
+    "name": "Regne de València - Gregori Mayans",
+    "network": "EMT",
+    "operator": "Empresa Municipal de Transportes de Valencia",
+    "public_transport": "platform",
+    "ref": "726",
+    "shelter": "no",
+    "source": "www.emtvalencia.es",
+    "tactile_paving": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 246089594,
+  "lat": 39.4647295,
+  "lon": -0.3730549,
+  "tags": {
+    "bench": "yes",
+    "bin": "no",
+    "bus": "yes",
+    "highway": "bus_stop",
+    "lit": "yes",
+    "name": "Regne de València - Russafa",
+    "network": "EMT",
+    "operator": "Empresa Municipal de Transportes de Valencia",
+    "public_transport": "platform",
+    "ref": "722",
+    "shelter": "yes",
+    "source": "www.emtvalencia.es",
+    "tactile_paving": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 246089633,
+  "lat": 39.4683446,
+  "lon": -0.3732228,
+  "tags": {
+    "bench": "yes",
+    "bin": "yes",
+    "bus": "yes",
+    "highway": "bus_stop",
+    "name": "Colón - Pascual i Genís",
+    "network": "EMT",
+    "network:wikidata": "Q11007711",
+    "operator": "Empresa Municipal de Transportes de Valencia",
+    "public_transport": "platform",
+    "ref": "2260",
+    "shelter": "yes",
+    "source": "www.emtvalencia.es",
+    "wheelchair": "yes"
   }
 },
 {
@@ -8101,6 +8441,26 @@
 },
 {
   "type": "node",
+  "id": 246089788,
+  "lat": 39.4694277,
+  "lon": -0.3776438,
+  "tags": {
+    "bench": "yes",
+    "bus": "yes",
+    "highway": "bus_stop",
+    "name": "Periodista Azzati - Plaça de l'Ajuntament",
+    "network": "EMT",
+    "network:wikidata": "Q11007711",
+    "old_name": "Periodista Azatti - Pl. de l'Ajuntament",
+    "operator": "Empresa Municipal de Transportes de Valencia",
+    "public_transport": "platform",
+    "ref": "2314",
+    "shelter": "yes",
+    "source": "www.emtvalencia.es"
+  }
+},
+{
+  "type": "node",
   "id": 524846177,
   "lat": 39.4698534,
   "lon": -0.3757013,
@@ -8911,6 +9271,27 @@
 },
 {
   "type": "node",
+  "id": 6647306560,
+  "lat": 39.4693569,
+  "lon": -0.3789023,
+  "tags": {
+    "bench": "no",
+    "bin": "no",
+    "bus": "yes",
+    "highway": "bus_stop",
+    "name": "Sant Vicent Màrtir - Ànimes",
+    "network": "EMT",
+    "network:wikidata": "Q11007711",
+    "operator": "Empresa Municipal de Transportes de Valencia",
+    "public_transport": "platform",
+    "ref": "2210",
+    "shelter": "no",
+    "source": "www.emtvalencia.es",
+    "tactile_paving": "yes"
+  }
+},
+{
+  "type": "node",
   "id": 6841745677,
   "lat": 39.4696786,
   "lon": -0.3787351,
@@ -9071,6 +9452,28 @@
     "tactile_paving": "yes",
     "traffic_signals:sound": "no",
     "traffic_signals:vibration": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 7515749823,
+  "lat": 39.4699844,
+  "lon": -0.3759811,
+  "tags": {
+    "bench": "yes",
+    "bus": "yes",
+    "departures_board": "yes",
+    "highway": "bus_stop",
+    "name": "Plaça de l'Ajuntament - Correus",
+    "network": "EMT",
+    "network:wikidata": "Q11007711",
+    "old_name": "Pl. de l'Ajuntament - Correus",
+    "operator": "Empresa Municipal de Transportes de Valencia",
+    "public_transport": "platform",
+    "ref": "2221",
+    "shelter": "yes",
+    "source": "www.emtvalencia.es",
+    "wheelchair": "yes"
   }
 },
 {

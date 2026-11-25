@@ -66,10 +66,23 @@ js/jugador/             Lo que el jugador controla.
 js/camara/              Cámara en tercera persona con anti-paredes.
 js/interfaz/            Pantalla de inicio (token) y HUD.
 js/lugares/lugares.js   Puntos de teletransporte (datos puros, verificados con OpenStreetMap).
+js/generador/           MODO HÍBRIDO (calles generadas bajo demanda con OpenStreetMap):
+  osm.js                Descarga Overpass (varios servidores) y almacén sin duplicados.
+  zona.js               Interpreta OSM → calles (coche/peatón/bici, ancho, carriles, sentido), edificios,
+                        locales comerciales (asignados a su pared), árboles, semáforos, cruces, bancos.
+  alturas.js            Campo de alturas del suelo (muestras de Google en ejes de calle, filtradas).
+  construirCelda.js     Geometría de una celda de 200 m: fases 1-3 (calle, mobiliario, bajos y letreros).
+  constructorGlb.js     Crea GLB en memoria (cajas, cilindros, esferas, polígonos) → Cesium.Model.
+  texturas.js           Texturas procedurales (canvas) y atlas de letreros; CATEGORIAS = cómo se “lee” cada local.
+  ciudad.js             Gestor: celdas 3×3 alrededor del jugador, recorte de Google (ClippingPlaneCollection:
+                        por debajo de CIUDAD.corte y dentro de la caja generada), reinicio al alejarse.
+  proyeccion.js         lon/lat ↔ metros locales y matriz ENU de la zona.
+js/npc/poblacion.js     Fase 4: coches NPC por carriles (respetan sentido único) y peatones por aceras.
 js/modos/juego.js       Orquesta modos, teletransporte y bucle principal.
 assets/modelos/         coche_realista.glb (Car Concept, Khronos, CC-BY 4.0), peaton.glb (Cesium Man, CC-BY 4.0)
                         y coche.glb de reserva (generado por herramientas/generar_coche.py).
 pruebas/fisica.html     Escenario sin Google para probar la física (suelo, pared, bordillo, escalón, toldo).
+pruebas/ciudad.html     Modo híbrido sin Google con datos OSM guardados (pruebas/datos/osm_xativa.json).
 ```
 
 ### Convenciones
@@ -91,19 +104,23 @@ pruebas/fisica.html     Escenario sin Google para probar la física (suelo, pare
 - Google Photorealistic 3D Tiles: **mostrar siempre los créditos y el logo de Google** (no tapar la esquina inferior izquierda), no usar otro buscador que no sea el de Google, no mezclar con otro globo/terreno.
 - Cesium Man: CC-BY 4.0, © Cesium. Ver `assets/modelos/CREDITOS.md`.
 
-## Limitación conocida: calidad a pie de calle
+## Modo híbrido (implementado)
 
-Las Google 3D Tiles se hacen con fotos aéreas: desde el aire se ven genial, pero a ras de suelo se ven "derretidas"
-(coches aparcados como manchas, pasos de cebra borrosos). Ninguna opción de calidad lo arregla. La solución prevista
-encaja con la regla de oro: **modo híbrido** — cerca del jugador, generar automáticamente geometría limpia de juego a partir
-de OpenStreetMap (asfalto, marcas viales, aceras, fachadas) y dejar las 3D Tiles de Google para la distancia y el contexto.
+Las Google 3D Tiles se hacen con fotos aéreas: a ras de suelo se ven "derretidas". Solución (regla de oro):
+cerca del jugador se genera geometría limpia de juego con OpenStreetMap y a Google se le recorta lo que está
+por debajo de ~3,6 m solo en esa zona (se conservan fachadas altas y monumentos reales).
+- En la zona generada los rayos de física IGNORAN el tileset de Google (FisicaSuelo.ignorarTilesetEn).
+- Las alturas se miden en Google ANTES de recortar cada celda.
+- En vuelo libre se oculta lo generado y se desactiva el recorte.
+- Si Overpass falla, se queda la vista de Google y se reintenta a los 20 s.
 
 ## Siguientes pasos sugeridos
 
 1. Controles táctiles (joystick) para coche y a pie en móvil.
-2. NPCs peatones generados a partir de las aceras de OpenStreetMap.
-3. Primer “interior bajo demanda”: al acercarse a un local, leer su tipo en OpenStreetMap (farmacia, heladería…) y generar un interior simple.
-4. Multijugador (WebSocket) usando el estado compacto del jugador; Battle Royale con teletransporte a 150–250 m.
+2. Primer “interior bajo demanda”: entrar en un local (ya sabemos su tipo por `categoriaDe`) y generar un interior simple.
+3. Semáforos con ciclo real y NPCs que los respetan; pasos de cebra con prioridad para peatones.
+4. Fachadas completas para edificios sin buena malla de Google.
+5. Multijugador (WebSocket) usando el estado compacto del jugador; Battle Royale con teletransporte a 150–250 m.
 
 ## Cómo probar
 

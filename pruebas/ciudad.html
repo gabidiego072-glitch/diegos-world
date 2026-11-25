@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Diego's World · Valencia</title>
+  <meta name="description" content="Diego's World: la Valencia real en 3D convertida en un mundo jugable en el navegador.">
+  <meta name="theme-color" content="#0b0d12">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='28' fill='%23ff7a1a'/><path d='M14 34c6-12 30-12 36 0' stroke='%230b0d12' stroke-width='5' fill='none'/><circle cx='32' cy='40' r='6' fill='%230b0d12'/></svg>">
+
+  <!-- Fuentes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- CesiumJS, versión fijada (cámbiala solo aquí y en js/config.js) -->
+  <link href="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/Cesium.js"></script>
+
+  <link href="../css/estilo.css" rel="stylesheet">
+</head>
+<body>
+  <!-- El mundo 3D -->
+  <div id="mundo"></div>
+
+  <!-- ===== Pantalla de inicio ===== -->
+  <section id="pantalla-inicio" class="pantalla">
+    <div class="inicio-caja">
+      <header class="inicio-cabecera">
+        <div class="logo">DIEGO'S <span>WORLD</span></div>
+        <p class="lema">El planeta Tierra convertido en un mundo abierto. Primera parada: <strong>Valencia</strong>.</p>
+      </header>
+
+      <form id="form-token" class="inicio-form" autocomplete="off">
+        <label for="campo-token">Tu token de Cesium ion</label>
+        <div class="fila-token">
+          <input id="campo-token" type="password" placeholder="Pega aquí tu token (empieza por eyJ...)" spellcheck="false" autocomplete="off" required>
+          <button type="button" id="ver-token" class="boton-icono" aria-label="Mostrar u ocultar el token" title="Mostrar / ocultar">👁</button>
+        </div>
+        <p class="nota">🔒 El token se guarda <strong>solo en este navegador</strong> (localStorage). Nunca se sube a ningún sitio ni al repositorio.</p>
+        <p id="error-inicio" class="error" role="alert" hidden></p>
+        <div class="fila-botones">
+          <button type="submit" id="boton-jugar" class="boton-principal">Entrar en Valencia</button>
+          <button type="button" id="boton-borrar-token" class="boton-secundario" hidden>Borrar token guardado</button>
+        </div>
+      </form>
+
+      <details class="instrucciones" id="instrucciones">
+        <summary>¿Cómo consigo el token gratis? (2 minutos)</summary>
+        <ol>
+          <li>Entra en <a href="https://ion.cesium.com/signup" target="_blank" rel="noopener">ion.cesium.com</a> y crea una cuenta gratuita (no pide tarjeta).</li>
+          <li>Ve a <strong>Asset Depot</strong>, busca <strong>“Google Photorealistic 3D Tiles”</strong> y pulsa <strong>“Add to my assets”</strong>. (En muchas cuentas ya viene añadido; si ves que ya está en <em>My Assets</em>, sáltate este paso.)</li>
+          <li>Ve a <strong>Access Tokens</strong> (menú de arriba). Copia el <strong>Default Token</strong> entero (es un texto largo que empieza por <code>eyJ</code>).</li>
+          <li>Pégalo arriba y pulsa <strong>Entrar en Valencia</strong>. ¡Listo! La próxima vez ya estará guardado.</li>
+        </ol>
+      </details>
+
+      <footer class="inicio-pie">
+        Prototipo v0.1 · Mapa 3D: Google Photorealistic 3D Tiles vía Cesium ion
+      </footer>
+    </div>
+  </section>
+
+  <!-- ===== Pantalla de carga ===== -->
+  <div id="pantalla-carga" class="pantalla carga" hidden>
+    <div class="spinner"></div>
+    <p id="texto-carga">Cargando Valencia…</p>
+  </div>
+
+  <!-- ===== Interfaz del juego (HUD) ===== -->
+  <div id="hud" hidden>
+    <div class="hud-arriba">
+      <div class="marca">DIEGO'S <span>WORLD</span></div>
+
+      <nav class="modos" aria-label="Modo de juego">
+        <button class="modo" data-modo="coche" title="Coche (tecla 1)"><span class="emoji">🚗</span><span class="txt">Coche</span><kbd>1</kbd></button>
+        <button class="modo" data-modo="pie" title="A pie (tecla 2)"><span class="emoji">🚶</span><span class="txt">A pie</span><kbd>2</kbd></button>
+        <button class="modo" data-modo="vuelo" title="Vuelo libre (tecla 3)"><span class="emoji">🕊️</span><span class="txt">Vuelo</span><kbd>3</kbd></button>
+      </nav>
+
+      <div class="acciones">
+        <button id="boton-lugares" class="boton-hud" aria-expanded="false" title="Teletransporte (tecla T)">📍 <span class="txt">Lugares</span></button>
+        <button id="boton-ciudad" class="boton-hud" title="Calles generadas con OpenStreetMap (modo híbrido) o solo Google">🏙️ <span class="txt">Calles:</span> <b id="texto-ciudad">Generadas</b></button>
+        <button id="boton-calidad" class="boton-hud" title="Calidad gráfica">⚙️ <span class="txt">Calidad:</span> <b id="texto-calidad">Baja</b></button>
+        <button id="boton-salir" class="boton-hud" title="Volver a la pantalla de inicio">⏻</button>
+      </div>
+    </div>
+
+    <aside id="panel-lugares" class="panel" hidden>
+      <h2>Teletransporte</h2>
+      <ul id="lista-lugares"></ul>
+    </aside>
+
+    <div id="velocimetro" class="velocimetro" hidden>
+      <div class="vel-numero" id="vel-numero">0</div>
+      <div class="vel-unidad">km/h</div>
+      <div class="vel-barra"><div id="vel-relleno"></div></div>
+      <div class="vel-turbo" id="vel-turbo">TURBO</div>
+    </div>
+
+    <div id="estado-pie" class="velocimetro pequeno" hidden>
+      <div class="vel-numero" id="pie-estado">Quieto</div>
+    </div>
+
+    <button id="boton-aparecer" class="boton-principal flotante" hidden>⬇ Aparecer aquí</button>
+
+    <div id="ayuda" class="ayuda"></div>
+    <div id="aviso" class="aviso" role="status" aria-live="polite"></div>
+  </div>
+
+  <script type="module">
+// PRUEBA DEL MODO HÍBRIDO SIN GOOGLE: usa datos guardados de OpenStreetMap (Calle de Xàtiva, © colaboradores de OpenStreetMap).
+// Ábrelo con un servidor local:  python3 -m http.server  →  http://localhost:8000/pruebas/ciudad.html
+import { Juego } from "../js/modos/juego.js";
+import { Entrada } from "../js/jugador/entrada.js";
+document.getElementById("pantalla-inicio").hidden = true;
+const viewer = new Cesium.Viewer("mundo", { globe: false, baseLayer: false, baseLayerPicker: false, geocoder: false, homeButton: false,
+  sceneModePicker: false, navigationHelpButton: false, animation: false, timeline: false, fullscreenButton: false,
+  infoBox: false, selectionIndicator: false, skyAtmosphere: new Cesium.SkyAtmosphere() });
+viewer.clock.currentTime = Cesium.JulianDate.fromIso8601("2026-06-21T10:30:00Z");
+const datos = await (await fetch("datos/osm_xativa.json")).json();
+const juego = new Juego({ viewer, scene: viewer.scene, tileset: {}, nivelCalidad: "baja" }, new Entrada(), { alSalir() {} });
+juego.ciudad.descargar = async () => datos.elements;
+window.juego = juego;
+juego.iniciar().then(() => { window.listo = true; }).catch((e) => { window.fallo = String(e.stack || e); console.error(e); });
+</script>
+</body>
+</html>

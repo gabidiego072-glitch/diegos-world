@@ -15,6 +15,9 @@ export class FisicaSuelo {
     this.scene = scene;
     this.excluir = [];      // modelos propios (coche, personaje) que los rayos deben ignorar
     this.rayosEsteFotograma = 0;
+    // Modo híbrido: donde hay calle generada, los rayos ignoran la Valencia de Google (que está recortada).
+    this.tileset = null;
+    this.ignorarTilesetEn = null; // (lon, lat) => boolean
   }
 
   ignorar(primitiva) {
@@ -24,9 +27,14 @@ export class FisicaSuelo {
   /** Lanza un rayo genérico. Devuelve { posicion, distancia } o undefined. */
   rayo(origen, direccion) {
     this.rayosEsteFotograma++;
+    let excluir = this.excluir;
+    if (this.tileset && this.ignorarTilesetEn) {
+      const c = Cesium.Cartographic.fromCartesian(origen);
+      if (c && this.ignorarTilesetEn(c.longitude, c.latitude)) excluir = [...this.excluir, this.tileset];
+    }
     let r;
     try {
-      r = this.scene.pickFromRay(new Cesium.Ray(origen, direccion), this.excluir);
+      r = this.scene.pickFromRay(new Cesium.Ray(origen, direccion), excluir);
     } catch (e) {
       return undefined; // p. ej. mientras cargan las teselas
     }

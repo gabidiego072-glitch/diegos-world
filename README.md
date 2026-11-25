@@ -35,7 +35,23 @@ Un **token de Cesium ion**. Es como una “llave” gratuita para descargar la V
 - **Calidad Baja/Alta** (arriba a la derecha). Empieza en *Baja*, pensada para ordenadores flojos. Sin sombras.
 - En el **móvil** funciona el modo de vuelo con los dedos (arrastrar, pellizcar) y el botón “Aparecer aquí”.
 
-## 3. Cómo funciona (explicado fácil)
+## 3. Modo híbrido: calles generadas (botón 🏙️ “Calles”)
+
+La Valencia de Google está hecha con fotos desde aviones: desde lejos es espectacular, pero a ras de suelo
+se ve “derretida”. Por eso, **alrededor del jugador** (unos 600 × 600 m) el juego **genera solo** una calle
+de videojuego con los datos reales de **OpenStreetMap**:
+
+1. **Asfalto, líneas, pasos de cebra, bordillos, aceras**, plazas y zonas verdes.
+2. **Árboles, farolas, semáforos y bancos** (los reales del mapa; si no hay datos, se colocan con reglas).
+3. **Bajos de los edificios** con portales, ventanas y **escaparates con el nombre real de cada tienda**
+   (farmacias, heladerías, cafeterías…).
+4. **Coches y peatones NPC** que circulan por sus carriles y pasean por las aceras.
+
+De la Valencia de Google se oculta solo lo que está por debajo de ~3,6 m en esa zona, así que **los edificios
+altos y los monumentos siguen siendo los reales**. Al moverte, la zona generada te acompaña.
+Con el botón **🏙️ Calles** puedes cambiar entre *Generadas* y *Google* (solo Google).
+
+## 4. Cómo funciona (explicado fácil)
 
 - **CesiumJS** dibuja el planeta en 3D dentro del navegador.
 - **Google Photorealistic 3D Tiles** es la ciudad real escaneada: edificios, árboles, coches aparcados…
@@ -44,7 +60,7 @@ Un **token de Cesium ion**. Es como una “llave” gratuita para descargar la V
   - uno **hacia delante**, para detectar paredes y parar al chocar;
   - si el escalón es más alto de 45 cm, se considera una pared.
 
-## 4. Publicarlo gratis con GitHub Pages (una sola vez)
+## 5. Publicarlo gratis con GitHub Pages (una sola vez)
 
 1. En GitHub, abre el repositorio **diegos-world** → **Settings** (Configuración).
 2. En el menú de la izquierda, entra en **Pages**.
@@ -52,7 +68,7 @@ Un **token de Cesium ion**. Es como una “llave” gratuita para descargar la V
 4. En **Branch**, elige la rama donde está el juego (`claude/lucid-davinci-x60x3r`, o `main` si ya la has fusionado) y la carpeta **/ (root)**. Pulsa **Save**.
 5. Espera 1–2 minutos y abre: **https://gabidiego072-glitch.github.io/diegos-world/**
 
-## 5. Probarlo en tu ordenador (opcional)
+## 6. Probarlo en tu ordenador (opcional)
 
 Si tienes Python instalado:
 
@@ -62,7 +78,7 @@ python3 -m http.server 8000
 
 Abre `http://localhost:8000`. (Abrir `index.html` con doble clic **no** funciona, porque los navegadores bloquean los módulos JavaScript en archivos locales.)
 
-## 6. Estructura del proyecto
+## 7. Estructura del proyecto
 
 ```
 index.html           Pantallas e interfaz
@@ -74,13 +90,17 @@ js/camara/           Cámara en tercera persona
 js/interfaz/         Pantalla de inicio y HUD
 js/lugares/          Puntos de teletransporte
 js/modos/juego.js    Une todo: modos, teletransporte y bucle del juego
+js/generador/        Modo híbrido: descarga OpenStreetMap y genera calles, mobiliario y fachadas
+js/npc/              Coches y peatones NPC
 assets/modelos/      Coche y personaje 3D
 pruebas/fisica.html  Escenario de prueba de la física (sin Google)
+pruebas/ciudad.html  Prueba del modo híbrido con datos guardados de la Calle de Xàtiva (sin Google)
 CLAUDE.md            Visión completa del proyecto y reglas de desarrollo
 ```
 
-## 7. Créditos
+## 8. Créditos
 
+- Calles generadas: datos © **colaboradores de OpenStreetMap** (ODbL).
 - Ciudad 3D: **Google Photorealistic 3D Tiles** vía **Cesium ion** (los créditos de Google se muestran siempre en pantalla, como exige su licencia).
 - Motor: **CesiumJS** (Apache 2.0).
 - Coche: “Car Concept” © The Khronos Group, CC-BY 4.0.

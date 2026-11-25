@@ -14,7 +14,7 @@ const AYUDAS = {
 };
 
 export class Hud {
-  constructor({ alCambiarModo, alTeletransportar, alCambiarCalidad, alSalir, alAparecerAqui }) {
+  constructor({ alCambiarModo, alTeletransportar, alCambiarCalidad, alSalir, alAparecerAqui, alCambiarCiudad }) {
     this.raiz = $("hud");
     this.temporizadorAviso = null;
 
@@ -39,6 +39,7 @@ export class Hud {
     $("boton-lugares").addEventListener("click", (e) => { this.panelLugares(); e.currentTarget.blur(); });
     $("boton-calidad").addEventListener("click", (e) => { alCambiarCalidad(); e.currentTarget.blur(); });
     $("boton-salir").addEventListener("click", alSalir);
+    $("boton-ciudad").addEventListener("click", (e) => { alCambiarCiudad(); e.currentTarget.blur(); });
     $("boton-aparecer").addEventListener("click", alAparecerAqui);
   }
 
@@ -57,6 +58,10 @@ export class Hud {
     $("estado-pie").hidden = modo !== "pie";
     $("boton-aparecer").hidden = modo !== "vuelo";
     $("ayuda").innerHTML = AYUDAS[modo] || "";
+  }
+
+  ponerCiudad(activa) {
+    $("texto-ciudad").textContent = activa ? "Generadas" : "Google";
   }
 
   ponerCalidad(nivel) {

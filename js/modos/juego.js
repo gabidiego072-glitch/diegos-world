@@ -2,7 +2,7 @@
  * JUEGO: une todas las piezas y gestiona los tres modos (coche, a pie, vuelo libre),
  * el teletransporte y el bucle principal.
  */
-import { CAMARA, CALIDADES, CLAVE_CALIDAD, CLAVE_MODO, DISTANCIA_VISION, MODELOS } from "../config.js";
+import { CAMARA, CALIDADES, CIUDAD, CLAVE_CALIDAD, CLAVE_CIUDAD, CLAVE_MODO, DETALLE_LEJANO, MODELOS } from "../config.js";
 import { aplicarCalidad } from "../mundo/mundo.js";
 import { FisicaSuelo } from "../mundo/fisica.js";
 import { desplazar, grados, radianes } from "../mundo/geo.js";
@@ -12,6 +12,8 @@ import { Peaton } from "../jugador/peaton.js";
 import { CamaraSeguimiento } from "../camara/camaraSeguimiento.js";
 import { Hud } from "../interfaz/hud.js";
 import { buscarLugar, LUGAR_INICIAL } from "../lugares/lugares.js";
+import { GeneradorCiudad } from "../generador/ciudad.js";
+import { Poblacion } from "../npc/poblacion.js";
 
 const ALTURA_SUELO_SUPUESTA = 60; // m sobre el elipsoide; Valencia está a ~10 m sobre el mar (+50 m de geoide)
 
@@ -30,7 +32,6 @@ export class Juego {
     this.ocupado = false;
     this.ultimoTick = performance.now();
     this.ultimoAvisoChoque = 0;
-    this.farOriginal = this.viewer.camera.frustum.far;
 
     this.hud = new Hud({
       alCambiarModo: (m) => this.cambiarModo(m),
@@ -38,7 +39,16 @@ export class Juego {
       alCambiarCalidad: () => this.alternarCalidad(),
       alSalir: () => this.alSalir(),
       alAparecerAqui: () => this.aparecerDondeMiro(),
+      alCambiarCiudad: () => this.alternarCiudad(),
     });
+
+    // Modo híbrido: ciudad generada + NPCs.
+    this.ciudad = new GeneradorCiudad(mundo, this.fisica, { alAviso: (t) => this.hud.aviso(t, { duracion: 2500 }) });
+    this.poblacion = new Poblacion(this.scene, this.ciudad);
+    this.poblacion.ponerCalidad(mundo.nivelCalidad);
+    this.ciudad.modelosExtra = () => this.poblacion.modelos();
+    this.fisica.tileset = mundo.tileset instanceof Cesium.Cesium3DTileset ? mundo.tileset : null;
+    this.fisica.ignorarTilesetEn = (lon, lat) => this.ciudad.cubre(lon, lat);
   }
 
   async iniciar() {
@@ -50,6 +60,10 @@ export class Juego {
     this.peaton = new Peaton(this.fisica, modeloPeaton, radianes(MODELOS.peaton.correccionRumbo), MODELOS.peaton.alturaBase);
     this.coche.visible = false;
     this.peaton.visible = false;
+
+    await this.ciudad.preparar();
+    this.ciudad.activo = leer(CLAVE_CIUDAD, CIUDAD.activaPorDefecto ? "si" : "no") === "si";
+    this.hud.ponerCiudad(this.ciudad.activo);
 
     // Bucle principal: Cesium llama a esto una vez por fotograma.
     this.quitarTick = this.viewer.clock.onTick.addEventListener(() => this.tick());
@@ -86,6 +100,11 @@ export class Juego {
     if (this.pausado || this.destruido) return;
 
     const controles = this.entrada.leer();
+    if (this.modo === "coche" || this.modo === "pie") {
+      const c = this.cuerpo(this.modo);
+      this.ciudad.actualizar(c.lon, c.lat);
+      this.poblacion.actualizar(dt, c);
+    }
     if (this.modo === "coche") {
       const choque = this.coche.actualizar(dt, controles);
       this.camara.actualizar(dt, this.coche);
@@ -113,8 +132,15 @@ export class Juego {
   activarModo(modo) {
     this.modo = modo;
     this.hud.ponerModo(modo);
-    // En coche / a pie solo cargamos lo cercano; en vuelo, todo hasta el horizonte.
-    this.viewer.camera.frustum.far = DISTANCIA_VISION[modo] ?? this.farOriginal;
+    // En coche / a pie, lo lejano se carga con menos detalle; en vuelo, todo con detalle normal.
+    const ts = this.mundo.tileset;
+    if (ts instanceof Cesium.Cesium3DTileset) {
+      ts.dynamicScreenSpaceError = true;
+      ts.dynamicScreenSpaceErrorDensity = DETALLE_LEJANO[modo] ?? DETALLE_LEJANO.vuelo;
+      ts.dynamicScreenSpaceErrorFactor = 24;
+    }
+    this.ciudad.mostrar(modo !== "vuelo");
+    this.poblacion.mostrar(modo !== "vuelo" && this.ciudad.activo);
     if (modo === "vuelo") {
       this.camara.activar(false);
       return;
@@ -183,7 +209,6 @@ export class Juego {
     this.ocupado = true;
     this.pausado = true;
     this.camara.activar(false);
-    this.viewer.camera.frustum.far = this.farOriginal;
 
     const lon = radianes(lonG), lat = radianes(latG), rumbo = radianes(rumboG);
     try {
@@ -206,7 +231,8 @@ export class Juego {
       const suelo = (await this.fisica.alturaSueloDetallada(lon, lat)) ?? ALTURA_SUELO_SUPUESTA;
       if (this.destruido) return false;
 
-      // 3) Colocamos coche (y peatón al lado si vamos a pie).
+      // 3) Colocamos coche (y peatón al lado si vamos a pie) y empezamos a generar las calles de alrededor.
+      this.ciudad.reiniciar(lonG, latG, suelo);
       this.coche.colocar(lon, lat, suelo, rumbo);
       if (modo === "pie") {
         const lado = rumbo - Math.PI / 2;
@@ -257,10 +283,21 @@ export class Juego {
     return { lonG: grados(c.longitude), latG: grados(c.latitude) };
   }
 
+  // ------------------------------------------------------------------ ciudad generada
+  alternarCiudad() {
+    const v = !this.ciudad.activo;
+    this.ciudad.activar(v);
+    this.poblacion.mostrar(v && this.modo !== "vuelo");
+    guardar(CLAVE_CIUDAD, v ? "si" : "no");
+    this.hud.ponerCiudad(v);
+    this.hud.aviso(v ? "Calles generadas (modo híbrido)" : "Solo la Valencia de Google");
+  }
+
   // ------------------------------------------------------------------ calidad
   alternarCalidad() {
     const nueva = this.mundo.nivelCalidad === "alta" ? "baja" : "alta";
     aplicarCalidad(this.mundo, nueva);
+    this.poblacion.ponerCalidad(nueva);
     guardar(CLAVE_CALIDAD, nueva);
     this.hud.ponerCalidad(nueva);
     this.hud.aviso(`Calidad ${CALIDADES[nueva].nombre.toLowerCase()}`);
@@ -269,6 +306,8 @@ export class Juego {
   destruir() {
     this.destruido = true;
     if (this.quitarTick) this.quitarTick();
+    this.poblacion.destruir();
+    this.ciudad.destruir();
     if (this.manejador) this.manejador.destroy();
     this.hud.mostrar(false);
     this.hud.panelLugares(false);

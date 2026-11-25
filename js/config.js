@@ -54,10 +54,11 @@ export const PEATON = {
 };
 
 /**
- * Distancia máxima de visión (metros) en coche y a pie. A ras de suelo la cámara ve hasta el horizonte
- * y el navegador intentaría descargar media Valencia: limitarlo hace que la calle cercana cargue rápido y nítida.
+ * Detalle en la distancia (dynamicScreenSpaceErrorDensity de Cesium). A ras de suelo la cámara ve hasta el
+ * horizonte y el navegador intentaría descargar media Valencia con todo detalle: con un valor más alto,
+ * lo lejano se carga en baja calidad y la calle cercana carga rápido y nítida.
  */
-export const DISTANCIA_VISION = { coche: 1500, pie: 800 };
+export const DETALLE_LEJANO = { coche: 0.0015, pie: 0.002, vuelo: 0.0002 };
 
 /** Cámara en tercera persona. */
 export const CAMARA = {
@@ -73,4 +74,21 @@ export const MODELOS = {
   // alturaBase: cuánto hay que subir el modelo para que las ruedas toquen el suelo.
   coche: { url: new URL("../assets/modelos/coche_realista.glb", import.meta.url).href, correccionRumbo: 0, escala: 1, alturaBase: 0.49 },
   peaton: { url: new URL("../assets/modelos/peaton.glb", import.meta.url).href, correccionRumbo: 0, escala: 1, alturaBase: 0 },
+};
+
+/**
+ * MODO HÍBRIDO: calle de videojuego generada con OpenStreetMap alrededor del jugador.
+ *  - tamCelda: tamaño de cada trozo generado (m). radio: cuántas celdas alrededor (1 → 3×3 = 600×600 m).
+ *  - corte: por debajo de esta altura (m sobre el suelo) se oculta la Valencia de Google en la zona generada.
+ *  - distanciaReinicio: si te alejas tanto del centro, se vuelve a generar centrado en ti.
+ */
+export const CIUDAD = { activaPorDefecto: true, tamCelda: 200, radio: 1, corte: 3.6, distanciaReinicio: 450 };
+export const CLAVE_CIUDAD = "diegosworld.ciudadGenerada";
+
+/** NPCs (cantidad según la calidad gráfica). */
+export const NPC = {
+  coches: { baja: 4, alta: 8 },
+  peatones: { baja: 10, alta: 22 },
+  radioAparicion: [35, 170],
+  radioDesaparicion: 230,
 };
